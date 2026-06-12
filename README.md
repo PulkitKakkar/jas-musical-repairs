@@ -83,6 +83,8 @@ Email notifications use Resend. Verify a sending domain in Resend, then set `RES
 
 SMS and email messages share the same status-specific content and automated-message footer. Set `JAS_CONTACT_NUMBER` to control the support number included in notifications.
 
+To enable repair cancellation on an existing database, run [`supabase/migrations/20260612_add_cancelled_repairs.sql`](supabase/migrations/20260612_add_cancelled_repairs.sql) once in the Supabase SQL Editor.
+
 ## Vercel Deployment
 
 1. Push the repository to GitHub and import it into Vercel.

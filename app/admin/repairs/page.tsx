@@ -4,7 +4,7 @@ import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
-import { durationDays, formatDate, formatDuration } from "@/lib/utils";
+import { durationDays, formatDate, formatDuration, formatMoney } from "@/lib/utils";
 import { tryNormalizeUkPhone } from "@/lib/utils";
 
 type Filters = {
@@ -26,7 +26,7 @@ export default async function AllRepairsPage({
     .select("*, customers(*)")
     .order("received_date", { ascending: false });
 
-  if (filters.status && ["RECEIVED", "DONE", "COLLECTED"].includes(filters.status)) {
+  if (filters.status && ["RECEIVED", "DONE", "COLLECTED", "CANCELLED"].includes(filters.status)) {
     query = query.eq("status", filters.status);
   }
   if (filters.from) query = query.gte("received_date", `${filters.from}T00:00:00.000Z`);
@@ -42,7 +42,7 @@ export default async function AllRepairsPage({
     repair.customers?.full_name.toLowerCase().includes(textQuery) ||
     repair.customers?.phone_number.includes(normalizedPhoneQuery ?? textQuery),
   );
-  const openRepairs = repairs.filter((repair) => repair.status !== "COLLECTED");
+  const openRepairs = repairs.filter((repair) => !["COLLECTED", "CANCELLED"].includes(repair.status));
   const averageOpenDays = openRepairs.length
     ? Math.round(openRepairs.reduce((total, repair) => total + (durationDays(repair.received_date, null) ?? 0), 0) / openRepairs.length)
     : 0;
@@ -61,7 +61,7 @@ export default async function AllRepairsPage({
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2 border-l-4 border-brand-600 bg-white p-4 text-xs font-bold uppercase tracking-wider text-ink/55">
-        <span>Received</span><span>→</span><span>Done</span><span>→</span><span>Collected</span>
+        <span>Received</span><span>→</span><span>Done</span><span>→</span><span>Collected</span><span className="ml-2 text-red-700">or Cancelled</span>
         <span className="ml-2 normal-case tracking-normal text-ink/40">Every change requires a date and confirmation.</span>
       </div>
 
@@ -78,6 +78,7 @@ export default async function AllRepairsPage({
           <option value="RECEIVED">Received</option>
           <option value="DONE">Done</option>
           <option value="COLLECTED">Collected</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
         <input aria-label="Intake date from" className="input" defaultValue={filters.from} name="from" type="date" />
         <input aria-label="Intake date to" className="input" defaultValue={filters.to} name="to" type="date" />
@@ -85,15 +86,18 @@ export default async function AllRepairsPage({
       </form>
 
       <section className="card overflow-x-auto">
-        <table className="w-full min-w-[1080px] text-left text-sm">
+        <table className="w-full min-w-[1400px] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wider text-ink/40">
             <tr>
               <th className="px-4 py-4">Repair</th>
               <th className="px-4 py-4">Customer / Instrument</th>
+              <th className="px-4 py-4">Phone</th>
+              <th className="px-4 py-4">Price</th>
               <th className="px-4 py-4">Status</th>
               <th className="px-4 py-4">Intake</th>
               <th className="px-4 py-4">Done</th>
               <th className="px-4 py-4">Collected</th>
+              <th className="px-4 py-4">Cancelled</th>
               <th className="px-4 py-4">Repair time</th>
               <th className="px-4 py-4">Total elapsed</th>
               <th className="px-4 py-4">Next action</th>
@@ -112,18 +116,23 @@ export default async function AllRepairsPage({
 }
 
 function RepairRow({ repair }: { repair: Repair }) {
-  const repairDays = durationDays(repair.received_date, repair.completed_date);
-  const totalDays = durationDays(repair.received_date, repair.collected_date);
+  const repairEndDate = repair.completed_date ?? repair.cancelled_date;
+  const repairDays = durationDays(repair.received_date, repairEndDate);
+  const terminalDate = repair.collected_date ?? repair.cancelled_date;
+  const totalDays = durationDays(repair.received_date, terminalDate);
   return (
-    <tr className="align-top hover:bg-brand-50">
+    <tr className={`align-top ${repair.status === "CANCELLED" ? "bg-red-50/70 hover:bg-red-50" : "hover:bg-brand-50"}`}>
       <td className="px-4 py-4"><Link className="font-bold text-brand-600 hover:underline" href={`/admin/repairs/${repair.id}`}>{repair.repair_number}</Link></td>
       <td className="px-4 py-4"><p className="font-bold">{repair.customers?.full_name}</p><p className="text-xs text-ink/50">{repair.instrument}</p></td>
+      <td className="px-4 py-4 whitespace-nowrap">{repair.customers?.phone_number}</td>
+      <td className="px-4 py-4 whitespace-nowrap font-medium">{formatMoney(repair.amount)}</td>
       <td className="px-4 py-4"><StatusBadge status={repair.status as RepairStatus} /></td>
       <td className="px-4 py-4">{formatDate(repair.received_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.completed_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.collected_date)}</td>
-      <td className="px-4 py-4"><Duration value={repairDays} live={!repair.completed_date} /></td>
-      <td className="px-4 py-4"><Duration value={totalDays} live={!repair.collected_date} /></td>
+      <td className="px-4 py-4">{formatDate(repair.cancelled_date)}</td>
+      <td className="px-4 py-4"><Duration value={repairDays} live={!repairEndDate} /></td>
+      <td className="px-4 py-4"><Duration value={totalDays} live={!terminalDate} /></td>
       <td className="px-4 py-4"><StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /></td>
     </tr>
   );

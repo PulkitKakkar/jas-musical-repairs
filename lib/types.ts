@@ -1,4 +1,4 @@
-export type RepairStatus = "RECEIVED" | "DONE" | "COLLECTED";
+export type RepairStatus = "RECEIVED" | "DONE" | "COLLECTED" | "CANCELLED";
 
 export type Customer = {
   id: string;
@@ -21,6 +21,7 @@ export type Repair = {
   received_date: string;
   completed_date: string | null;
   collected_date: string | null;
+  cancelled_date: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

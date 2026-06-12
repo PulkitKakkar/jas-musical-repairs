@@ -11,11 +11,13 @@ export function ExportButton({ repairs }: { repairs: Repair[] }) {
       Instrument: r.instrument, Issue: r.issue_description, Amount: r.amount,
       Status: r.status, "Received Date": r.received_date,
       "Completed Date": r.completed_date, "Collected Date": r.collected_date,
+      "Cancelled Date": r.cancelled_date,
     }));
     const headers = Object.keys(rows[0] ?? {
       "Repair Number": "", "Customer Name": "", "Phone Number": "", Email: "",
       Instrument: "", Issue: "", Amount: "", Status: "", "Received Date": "",
       "Completed Date": "", "Collected Date": "",
+      "Cancelled Date": "",
     });
     const escape = (value: unknown) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const rowXml = [headers, ...rows.map((row) => headers.map((header) => row[header as keyof typeof row]))]

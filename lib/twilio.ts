@@ -26,6 +26,9 @@ export function statusMessage(
   if (status === "COLLECTED") {
     return `JAS Musicals: Hi ${firstName}, thank you for collecting your ${instrument}.\n\nWe appreciate your support.\n\n${footer}`;
   }
+  if (status === "CANCELLED") {
+    return `JAS Musicals: Hi ${firstName}, your ${instrument} repair has been cancelled as requested.\n\nRepair reference: ${repairNumber}\n\n${footer}`;
+  }
   return `JAS Musicals: Hi ${firstName}, thank you for leaving your ${instrument} with us for repair.\n\nRepair reference: ${repairNumber}\nStatus: Received\n\n${footer}`;
 }
 

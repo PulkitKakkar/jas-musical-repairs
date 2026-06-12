@@ -114,7 +114,7 @@ export async function createRepairAction(formData: FormData) {
 
 export async function updateStatusAction(repairId: string, status: RepairStatus, eventDate: string) {
   const { supabase } = await requireAdmin();
-  if (!["DONE", "COLLECTED"].includes(status)) return { error: "Invalid status" };
+  if (!["DONE", "COLLECTED", "CANCELLED"].includes(status)) return { error: "Invalid status" };
   const parsedDate = z.string().date().safeParse(eventDate);
   if (!parsedDate.success) return { error: "Select a valid status date" };
   const eventTimestamp = `${parsedDate.data}T12:00:00.000Z`;
@@ -127,24 +127,26 @@ export async function updateStatusAction(repairId: string, status: RepairStatus,
     .eq("id", repairId)
     .single();
   if (readError) return { error: readError.message };
-  const allowedNextStatus: Partial<Record<RepairStatus, RepairStatus>> = {
-    RECEIVED: "DONE",
-    DONE: "COLLECTED",
+  const allowedNextStatuses: Partial<Record<RepairStatus, RepairStatus[]>> = {
+    RECEIVED: ["DONE", "CANCELLED"],
+    DONE: ["COLLECTED", "CANCELLED"],
   };
-  if (allowedNextStatus[repair.status as RepairStatus] !== status) {
+  if (!allowedNextStatuses[repair.status as RepairStatus]?.includes(status)) {
     return { error: `A ${repair.status} repair cannot be marked as ${status}` };
   }
   if (parsedDate.data < repair.received_date.slice(0, 10)) {
     return { error: "Status date cannot be before the intake date" };
   }
-  if (status === "COLLECTED" && repair.completed_date && parsedDate.data < repair.completed_date.slice(0, 10)) {
-    return { error: "Collected date cannot be before the completed date" };
+  if (["COLLECTED", "CANCELLED"].includes(status) && repair.completed_date && parsedDate.data < repair.completed_date.slice(0, 10)) {
+    return { error: `${status === "COLLECTED" ? "Collected" : "Cancellation"} date cannot be before the completed date` };
   }
 
   const updates =
     status === "DONE"
       ? { status, completed_date: eventTimestamp }
-      : { status, collected_date: eventTimestamp };
+      : status === "COLLECTED"
+        ? { status, collected_date: eventTimestamp }
+        : { status, cancelled_date: eventTimestamp };
   const { error } = await supabase.from("repairs").update(updates).eq("id", repairId);
   if (error) return { error: error.message };
 

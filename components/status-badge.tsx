@@ -5,6 +5,7 @@ const styles: Record<RepairStatus, string> = {
   RECEIVED: "bg-amber-50 text-amber-700 ring-amber-600/20",
   DONE: "bg-blue-50 text-blue-700 ring-blue-600/20",
   COLLECTED: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  CANCELLED: "bg-red-50 text-red-700 ring-red-600/20",
 };
 
 export function StatusBadge({ status }: { status: RepairStatus }) {

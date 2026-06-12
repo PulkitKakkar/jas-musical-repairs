@@ -70,7 +70,7 @@ export default async function AdminHome({
             instrument.
           </p>
           <div className="mb-5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-ink/45">
-            <span>Received</span><ArrowRight size={12} /><span>Done</span><ArrowRight size={12} /><span>Collected</span>
+            <span>Received</span><ArrowRight size={12} /><span>Done</span><ArrowRight size={12} /><span>Collected</span><span className="text-red-700">or Cancelled</span>
           </div>
           <form className="flex gap-2">
             <input

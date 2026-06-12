@@ -22,6 +22,7 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
     ["Received", item.received_date, true],
     ["Done", item.completed_date, Boolean(item.completed_date)],
     ["Collected", item.collected_date, Boolean(item.collected_date)],
+    ["Cancelled", item.cancelled_date, Boolean(item.cancelled_date)],
   ] as const;
   return (
     <div className="mx-auto max-w-5xl">
@@ -29,8 +30,8 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 print:hidden">
-            <TimeCard label="Repair time" days={durationDays(item.received_date, item.completed_date)} live={!item.completed_date} />
-            <TimeCard label="Total elapsed time" days={durationDays(item.received_date, item.collected_date)} live={!item.collected_date} />
+            <TimeCard label="Repair time" days={durationDays(item.received_date, item.completed_date ?? item.cancelled_date)} live={!item.completed_date && !item.cancelled_date} />
+            <TimeCard label="Total elapsed time" days={durationDays(item.received_date, item.collected_date ?? item.cancelled_date)} live={!item.collected_date && !item.cancelled_date} />
           </div>
           <div className="card p-6 print:shadow-none"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-ink/40">JAS Musicals repair receipt</p><h2 className="mt-1 text-2xl font-black">{item.repair_number}</h2></div><StatusBadge status={item.status} /></div>
             <dl className="grid gap-5 text-sm sm:grid-cols-2"><Detail label="Customer" value={item.customers?.full_name} /><Detail label="Phone" value={item.customers?.phone_number} /><Detail label="Email" value={item.customers?.email ?? "—"} /><Detail label="Instrument" value={item.instrument} /><Detail label="Issue" value={item.issue_description} /><Detail label="Amount" value={formatMoney(item.amount)} /></dl>

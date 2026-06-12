@@ -1,6 +1,6 @@
 create extension if not exists pgcrypto;
 
-create type public.repair_status as enum ('RECEIVED', 'DONE', 'COLLECTED');
+create type public.repair_status as enum ('RECEIVED', 'DONE', 'COLLECTED', 'CANCELLED');
 
 create or replace function public.normalize_uk_phone(input_phone text)
 returns text
@@ -74,6 +74,7 @@ create table public.repairs (
   received_date timestamptz not null default now(),
   completed_date timestamptz,
   collected_date timestamptz,
+  cancelled_date timestamptz,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
