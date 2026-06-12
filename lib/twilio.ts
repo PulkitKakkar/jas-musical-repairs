@@ -1,5 +1,6 @@
 import twilio from "twilio";
 import type { RepairStatus } from "@/lib/types";
+import { normalizeUkPhone } from "@/lib/utils";
 
 export function isTwilioConfigured() {
   return Boolean(
@@ -33,7 +34,7 @@ export async function sendSms(to: string, body: string) {
     process.env.TWILIO_AUTH_TOKEN!,
   );
   const message = await client.messages.create({
-    to,
+    to: normalizeUkPhone(to),
     from: process.env.TWILIO_PHONE_NUMBER!,
     body,
   });

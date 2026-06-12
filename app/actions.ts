@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { sendSms, statusMessage } from "@/lib/twilio";
-import { splitName } from "@/lib/utils";
+import { sendStatusEmail } from "@/lib/email";
+import { normalizeUkPhone, splitName } from "@/lib/utils";
 import type { RepairStatus } from "@/lib/types";
 
 const repairSchema = z.object({
@@ -26,6 +27,12 @@ export async function createRepairAction(formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid repair details" };
   }
   const values = parsed.data;
+  let phoneNumber: string;
+  try {
+    phoneNumber = normalizeUkPhone(values.phoneNumber);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Invalid phone number" };
+  }
   const receivedTimestamp = `${values.receivedDate}T12:00:00.000Z`;
   const today = new Date().toISOString().slice(0, 10);
   if (values.receivedDate > today) {
@@ -36,7 +43,7 @@ export async function createRepairAction(formData: FormData) {
   const { data: existingCustomer } = await supabase
     .from("customers")
     .select("id")
-    .eq("phone_number", values.phoneNumber)
+    .eq("phone_number", phoneNumber)
     .maybeSingle();
 
   let customerId = existingCustomer?.id;
@@ -56,7 +63,7 @@ export async function createRepairAction(formData: FormData) {
       .insert({
         first_name: firstName,
         last_name: lastName,
-        phone_number: values.phoneNumber,
+        phone_number: phoneNumber,
         email: values.email || null,
       })
       .select("id")
@@ -81,11 +88,24 @@ export async function createRepairAction(formData: FormData) {
   if (error) return { error: error.message };
   try {
     await sendSms(
-      values.phoneNumber,
+      phoneNumber,
       statusMessage("RECEIVED", values.customerName, repair.repair_number),
     );
   } catch (smsError) {
     console.error("Receipt SMS failed", smsError);
+  }
+  if (values.email) {
+    try {
+      await sendStatusEmail({
+        to: values.email,
+        customerName: values.customerName,
+        repairNumber: repair.repair_number,
+        instrument: values.instrument,
+        status: "RECEIVED",
+      });
+    } catch (emailError) {
+      console.error("Receipt email failed", emailError);
+    }
   }
 
   revalidatePath("/admin");
@@ -103,7 +123,7 @@ export async function updateStatusAction(repairId: string, status: RepairStatus,
 
   const { data: repair, error: readError } = await supabase
     .from("repairs")
-    .select("repair_number, status, received_date, completed_date, customers(full_name, phone_number)")
+    .select("repair_number, instrument, status, received_date, completed_date, customers(full_name, phone_number, email)")
     .eq("id", repairId)
     .single();
   if (readError) return { error: readError.message };
@@ -138,6 +158,19 @@ export async function updateStatusAction(repairId: string, status: RepairStatus,
     );
   } catch (smsError) {
     console.error("Status SMS failed", smsError);
+  }
+  if (customer.email) {
+    try {
+      await sendStatusEmail({
+        to: customer.email,
+        customerName: customer.full_name,
+        repairNumber: repair.repair_number,
+        instrument: repair.instrument,
+        status,
+      });
+    } catch (emailError) {
+      console.error("Status email failed", emailError);
+    }
   }
 
   revalidatePath("/admin");

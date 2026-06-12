@@ -14,6 +14,8 @@ frontend:
         - test -z "$TWILIO_ACCOUNT_SID" || printf 'TWILIO_ACCOUNT_SID=%s\n' "$TWILIO_ACCOUNT_SID" >> .env.production
         - test -z "$TWILIO_AUTH_TOKEN" || printf 'TWILIO_AUTH_TOKEN=%s\n' "$TWILIO_AUTH_TOKEN" >> .env.production
         - test -z "$TWILIO_PHONE_NUMBER" || printf 'TWILIO_PHONE_NUMBER=%s\n' "$TWILIO_PHONE_NUMBER" >> .env.production
+        - test -z "$RESEND_API_KEY" || printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> .env.production
+        - test -z "$EMAIL_FROM" || printf 'EMAIL_FROM=%s\n' "$EMAIL_FROM" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next

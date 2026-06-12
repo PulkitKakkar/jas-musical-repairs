@@ -25,7 +25,7 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
   ] as const;
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex items-center gap-3"><StatusBadge status={item.status} /><StatusActions repairId={item.id} status={item.status} /></div></div>
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex items-center gap-3"><StatusBadge status={item.status} /><StatusActions repairId={item.id} status={item.status} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /></div></div>
       <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 print:hidden">

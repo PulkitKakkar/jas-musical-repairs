@@ -12,5 +12,5 @@ export function SmsTestForm() {
     const result = await response.json(); setPending(false);
     if (response.ok) toast.success(result.skipped ? "Twilio is not configured; SMS skipped" : "Test SMS sent");
     else toast.error(result.error);
-  }}><input className="input" name="phoneNumber" type="tel" placeholder="+44…" required /><button className="btn-primary" disabled={pending}>{pending ? "Sending…" : "Send test"}</button></form>;
+  }}><input className="input" name="phoneNumber" type="tel" placeholder="+44 or 07…" required /><button className="btn-primary" disabled={pending}>{pending ? "Sending…" : "Send test"}</button></form>;
 }

@@ -5,11 +5,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
 import { durationDays, formatDate, formatDuration } from "@/lib/utils";
+import { tryNormalizeUkPhone } from "@/lib/utils";
 
 type Filters = {
   status?: string;
   from?: string;
   to?: string;
+  q?: string;
 };
 
 export default async function AllRepairsPage({
@@ -31,7 +33,15 @@ export default async function AllRepairsPage({
   if (filters.to) query = query.lte("received_date", `${filters.to}T23:59:59.999Z`);
 
   const { data } = await query;
-  const repairs = (data ?? []) as Repair[];
+  const normalizedPhoneQuery = filters.q ? tryNormalizeUkPhone(filters.q) : null;
+  const textQuery = filters.q?.trim().toLowerCase();
+  const repairs = ((data ?? []) as Repair[]).filter((repair) =>
+    !textQuery ||
+    repair.repair_number.toLowerCase().includes(textQuery) ||
+    repair.instrument.toLowerCase().includes(textQuery) ||
+    repair.customers?.full_name.toLowerCase().includes(textQuery) ||
+    repair.customers?.phone_number.includes(normalizedPhoneQuery ?? textQuery),
+  );
   const openRepairs = repairs.filter((repair) => repair.status !== "COLLECTED");
   const averageOpenDays = openRepairs.length
     ? Math.round(openRepairs.reduce((total, repair) => total + (durationDays(repair.received_date, null) ?? 0), 0) / openRepairs.length)
@@ -50,13 +60,19 @@ export default async function AllRepairsPage({
         <Link className="btn-primary" href="/admin/repairs/new"><Plus size={16} />Add repair</Link>
       </div>
 
+      <div className="mb-6 flex flex-wrap items-center gap-2 border-l-4 border-brand-600 bg-white p-4 text-xs font-bold uppercase tracking-wider text-ink/55">
+        <span>Received</span><span>→</span><span>Done</span><span>→</span><span>Collected</span>
+        <span className="ml-2 normal-case tracking-normal text-ink/40">Every change requires a date and confirmation.</span>
+      </div>
+
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <Metric label="Filtered entries" value={String(repairs.length)} />
         <Metric label="Average open time" value={formatDuration(averageOpenDays)} />
         <Metric label="Longest open repair" value={formatDuration(longestOpenDays)} />
       </section>
 
-      <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-4">
+      <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
+        <input className="input" defaultValue={filters.q} name="q" placeholder="Repair, customer, phone, instrument…" />
         <select className="input" defaultValue={filters.status ?? ""} name="status">
           <option value="">All statuses</option>
           <option value="RECEIVED">Received</option>
@@ -108,7 +124,7 @@ function RepairRow({ repair }: { repair: Repair }) {
       <td className="px-4 py-4">{formatDate(repair.collected_date)}</td>
       <td className="px-4 py-4"><Duration value={repairDays} live={!repair.completed_date} /></td>
       <td className="px-4 py-4"><Duration value={totalDays} live={!repair.collected_date} /></td>
-      <td className="px-4 py-4"><StatusActions repairId={repair.id} status={repair.status} compact /></td>
+      <td className="px-4 py-4"><StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /></td>
     </tr>
   );
 }

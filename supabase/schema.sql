@@ -2,15 +2,54 @@ create extension if not exists pgcrypto;
 
 create type public.repair_status as enum ('RECEIVED', 'DONE', 'COLLECTED');
 
+create or replace function public.normalize_uk_phone(input_phone text)
+returns text
+language plpgsql
+immutable
+strict
+set search_path = public
+as $$
+declare
+  digits text := regexp_replace(trim(input_phone), '\D', '', 'g');
+begin
+  if digits like '0044%' then
+    digits := substring(digits from 5);
+  elsif digits like '44%' then
+    digits := substring(digits from 3);
+  elsif trim(input_phone) like '+%' or digits like '00%' then
+    raise exception 'Phone number must be a UK number';
+  elsif digits like '0%' then
+    digits := substring(digits from 2);
+  end if;
+
+  if digits !~ '^[0-9]{9,10}$' then
+    raise exception 'Invalid UK phone number';
+  end if;
+  return '+44' || digits;
+end;
+$$;
+
 create table public.customers (
   id uuid primary key default gen_random_uuid(),
   first_name text not null,
   last_name text not null default '',
   full_name text generated always as (trim(first_name || ' ' || last_name)) stored,
-  phone_number text not null unique,
+  phone_number text not null unique
+    check (phone_number = public.normalize_uk_phone(phone_number)),
   email text,
   created_at timestamptz not null default now()
 );
+
+create or replace function public.normalize_customer_phone()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  new.phone_number = public.normalize_uk_phone(new.phone_number);
+  return new;
+end;
+$$;
+
+create trigger customers_normalize_phone before insert or update of phone_number
+on public.customers for each row execute function public.normalize_customer_phone();
 
 create sequence public.repair_number_seq start 1;
 
@@ -94,4 +133,3 @@ for select to authenticated using (true);
 revoke all on public.customers from anon;
 revoke all on public.repairs from anon;
 revoke all on public.audit_logs from anon;
-

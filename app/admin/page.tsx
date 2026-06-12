@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { StatusActions } from "@/components/status-actions";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, tryNormalizeUkPhone } from "@/lib/utils";
 
 export default async function AdminHome({
   searchParams,
@@ -23,12 +23,13 @@ export default async function AdminHome({
       .limit(50);
 
     const query = q.trim().toLowerCase();
+    const normalizedPhoneQuery = tryNormalizeUkPhone(q);
     repairs = ((data ?? []) as Repair[]).filter(
       (repair) =>
         repair.repair_number.toLowerCase().includes(query) ||
         repair.instrument.toLowerCase().includes(query) ||
         repair.customers?.full_name.toLowerCase().includes(query) ||
-        repair.customers?.phone_number.includes(query),
+        repair.customers?.phone_number.includes(normalizedPhoneQuery ?? query),
     );
   }
 
@@ -109,7 +110,7 @@ export default async function AdminHome({
                 </Link>
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   <StatusBadge status={repair.status} />
-                  <StatusActions repairId={repair.id} status={repair.status} compact />
+                  <StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact />
                   <Link
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:underline"
                     href={`/admin/repairs/${repair.id}`}

@@ -2,15 +2,17 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
+import { tryNormalizeUkPhone } from "@/lib/utils";
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = "" } = await searchParams;
   const { supabase } = await requireAdmin();
   const { data } = await supabase.from("customers").select("*, repairs(id, repair_number, status)").order("created_at", { ascending: false });
   const customers = data ?? [];
+  const normalizedPhoneQuery = tryNormalizeUkPhone(q);
   const filtered = customers.filter((c) => {
     const repairs = c.repairs as Repair[];
-    return !q || c.full_name.toLowerCase().includes(q.toLowerCase()) || c.phone_number.includes(q) || repairs.some((r) => r.repair_number.toLowerCase().includes(q.toLowerCase()));
+    return !q || c.full_name.toLowerCase().includes(q.toLowerCase()) || c.phone_number.includes(normalizedPhoneQuery ?? q) || repairs.some((r) => r.repair_number.toLowerCase().includes(q.toLowerCase()));
   });
   return <div className="mx-auto max-w-5xl"><div className="mb-7"><p className="text-sm font-semibold text-brand-600">Customer records</p><h1 className="text-3xl font-black">Search customers</h1></div>
     <form className="card mb-6 flex gap-2 p-3"><input className="input" name="q" defaultValue={q} placeholder="Name, phone number, or repair number" /><button className="btn-primary"><Search size={16} />Search</button></form>

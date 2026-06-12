@@ -11,6 +11,7 @@ Production-ready repair tracking for JAS Musicals. Built with Next.js (React), T
 - All-repairs register with intake-date/status filters and elapsed-time reporting
 - Customer search, repair history, filtering, and Excel export
 - Received, done, and collected workflows with dates, confirmation prompts, SMS, and audit logs
+- Optional Resend email notifications for received, done, and collected events
 - Internal admin notes
 - Printable repair receipt
 - Responsive desktop and mobile interface
@@ -37,6 +38,8 @@ Requirements: Node.js 20+, a Supabase project, and optionally a Twilio account.
    TWILIO_ACCOUNT_SID=
    TWILIO_AUTH_TOKEN=
    TWILIO_PHONE_NUMBER=
+   RESEND_API_KEY=
+   EMAIL_FROM=JAS Musicals Repairs <repairs@your-verified-domain.com>
    ```
 
 5. Optionally run [`supabase/seed.sql`](supabase/seed.sql) in the SQL editor.
@@ -58,6 +61,8 @@ The schema uses snake_case SQL identifiers, represented by the requested fields 
 
 Repair numbers are generated atomically by a Postgres sequence, preventing collisions during concurrent intake. RLS denies anonymous access and allows authenticated admins to manage records.
 
+Customer phone numbers are normalized to UK E.164 format (`+44…`) before they are stored or sent to Twilio. Existing installations should run [`supabase/migrations/20260612_normalize_uk_phone_numbers.sql`](supabase/migrations/20260612_normalize_uk_phone_numbers.sql) once in the Supabase SQL editor. The migration stops without changing data if it finds invalid or duplicate-normalized phone numbers.
+
 ## Twilio Integration
 
 1. Purchase or select an SMS-capable Twilio phone number.
@@ -69,6 +74,10 @@ Repair numbers are generated atomically by a Postgres sequence, preventing colli
 If Twilio is not configured, repair actions still succeed and the server logs that SMS delivery was skipped. If Twilio rejects a message, the repair transaction remains saved and the error is logged. In a larger deployment, move SMS sending to a durable queue with retries.
 
 Twilio credentials are intentionally not stored in the database. Storing an Auth Token in an admin-editable table would expose a high-value secret to database readers and browser-facing code.
+
+## Email Notifications
+
+Email notifications use Resend. Verify a sending domain in Resend, then set `RESEND_API_KEY` and `EMAIL_FROM`. Notifications are sent on receipt and every status change when the customer has an email address. Email delivery failures are logged without blocking repair updates.
 
 ## Vercel Deployment
 
@@ -87,7 +96,7 @@ The repository includes [`amplify.yml`](amplify.yml) for Amplify Hosting compute
 2. Add these required environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Optionally add the three `TWILIO_*` variables.
+3. Optionally add the three `TWILIO_*` variables plus `RESEND_API_KEY` and `EMAIL_FROM`.
 4. Confirm the app platform is **Web Compute** and deploy.
 
 The build stops with a clear message if either required Supabase variable is missing.

@@ -30,6 +30,32 @@ export function formatDuration(days: number | null) {
   return `${days} day${days === 1 ? "" : "s"}`;
 }
 
+export function normalizeUkPhone(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) throw new Error("Phone number is required");
+
+  let digits = trimmed.replace(/\D/g, "");
+  if (digits.startsWith("0044")) digits = digits.slice(4);
+  else if (digits.startsWith("44")) digits = digits.slice(2);
+  else if (trimmed.startsWith("+") || digits.startsWith("00")) {
+    throw new Error("Enter a UK phone number");
+  }
+  else if (digits.startsWith("0")) digits = digits.slice(1);
+
+  if (!/^\d{9,10}$/.test(digits)) {
+    throw new Error("Enter a valid UK phone number");
+  }
+  return `+44${digits}`;
+}
+
+export function tryNormalizeUkPhone(value: string) {
+  try {
+    return normalizeUkPhone(value);
+  } catch {
+    return null;
+  }
+}
+
 export function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/);
   return {
