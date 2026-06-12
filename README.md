@@ -6,7 +6,7 @@ Production-ready repair tracking for JAS Musicals. Built with Next.js (React), T
 
 - Secure Supabase admin login and row-level security
 - Automatic unique repair numbers such as `REP-2026-000001`
-- Customer deduplication by phone number and complete repair history
+- Customer deduplication and intake auto-population exclusively by phone number
 - Internal landing page focused on adding repairs and updating status
 - All-repairs register with intake-date/status filters and elapsed-time reporting
 - Customer search, repair history, filtering, and Excel export
