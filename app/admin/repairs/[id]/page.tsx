@@ -6,7 +6,7 @@ import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { requireAdmin } from "@/lib/auth";
 import type { AuditLog, Repair } from "@/lib/types";
-import { formatDate, formatMoney } from "@/lib/utils";
+import { durationDays, formatDate, formatDuration, formatMoney } from "@/lib/utils";
 
 export default async function RepairDetails({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,6 +28,10 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex items-center gap-3"><StatusBadge status={item.status} /><StatusActions repairId={item.id} status={item.status} /></div></div>
       <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
         <section className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 print:hidden">
+            <TimeCard label="Repair time" days={durationDays(item.received_date, item.completed_date)} live={!item.completed_date} />
+            <TimeCard label="Total elapsed time" days={durationDays(item.received_date, item.collected_date)} live={!item.collected_date} />
+          </div>
           <div className="card p-6 print:shadow-none"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-ink/40">JAS Musicals repair receipt</p><h2 className="mt-1 text-2xl font-black">{item.repair_number}</h2></div><StatusBadge status={item.status} /></div>
             <dl className="grid gap-5 text-sm sm:grid-cols-2"><Detail label="Customer" value={item.customers?.full_name} /><Detail label="Phone" value={item.customers?.phone_number} /><Detail label="Email" value={item.customers?.email ?? "—"} /><Detail label="Instrument" value={item.instrument} /><Detail label="Issue" value={item.issue_description} /><Detail label="Amount" value={formatMoney(item.amount)} /></dl>
             <div className="mt-7"><ReceiptActions /></div>
@@ -45,4 +49,8 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
 
 function Detail({ label, value }: { label: string; value?: string | number | null }) {
   return <div><dt className="text-xs font-bold uppercase tracking-wider text-ink/40">{label}</dt><dd className="mt-1 font-medium">{value}</dd></div>;
+}
+
+function TimeCard({ label, days, live }: { label: string; days: number | null; live: boolean }) {
+  return <div className="card p-5"><p className="text-xs font-bold uppercase tracking-wider text-ink/40">{label}</p><p className={`mt-2 text-3xl ${live && (days ?? 0) >= 14 ? "text-orange-700" : ""}`}>{formatDuration(days)}</p><p className="mt-1 text-xs text-ink/45">{live ? "Currently counting" : "Final duration"}</p></div>;
 }

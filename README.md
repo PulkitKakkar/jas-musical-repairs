@@ -8,6 +8,7 @@ Production-ready repair tracking for JAS Musicals. Built with Next.js (React), T
 - Automatic unique repair numbers such as `REP-2026-000001`
 - Customer deduplication by phone number and complete repair history
 - Internal landing page focused on adding repairs and updating status
+- All-repairs register with intake-date/status filters and elapsed-time reporting
 - Customer search, repair history, filtering, and Excel export
 - Received, done, and collected workflows with dates, confirmation prompts, SMS, and audit logs
 - Internal admin notes

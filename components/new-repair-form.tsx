@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { createRepairAction } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
+import { todayInputValue } from "@/lib/utils";
 
 export function NewRepairForm() {
   const [name, setName] = useState("");
@@ -27,7 +28,8 @@ export function NewRepairForm() {
       <div><label className="label">Instrument</label><input className="input" name="instrument" required /></div>
       <div className="sm:col-span-2"><label className="label">Issue description</label><textarea className="input min-h-28" name="issueDescription" required /></div>
       <div><label className="label">Amount (£)</label><input className="input" name="amount" type="number" min="0" step="0.01" required /></div>
-      <div><label className="label">Internal notes</label><input className="input" name="notes" /></div>
+      <div><label className="label">Intake date</label><input className="input" name="receivedDate" type="date" defaultValue={todayInputValue()} max={todayInputValue()} required /></div>
+      <div className="sm:col-span-2"><label className="label">Internal notes</label><input className="input" name="notes" /></div>
       <div className="sm:col-span-2 flex justify-end"><SubmitButton>Create repair & send SMS</SubmitButton></div>
     </form>
   );

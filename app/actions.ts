@@ -15,6 +15,7 @@ const repairSchema = z.object({
   instrument: z.string().trim().min(2),
   issueDescription: z.string().trim().min(3),
   amount: z.coerce.number().min(0),
+  receivedDate: z.string().date(),
   notes: z.string().trim().optional(),
 });
 
@@ -25,6 +26,11 @@ export async function createRepairAction(formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid repair details" };
   }
   const values = parsed.data;
+  const receivedTimestamp = `${values.receivedDate}T12:00:00.000Z`;
+  const today = new Date().toISOString().slice(0, 10);
+  if (values.receivedDate > today) {
+    return { error: "Intake date cannot be in the future" };
+  }
   const { firstName, lastName } = splitName(values.customerName);
 
   const { data: existingCustomer } = await supabase
@@ -66,6 +72,7 @@ export async function createRepairAction(formData: FormData) {
       instrument: values.instrument,
       issue_description: values.issueDescription,
       amount: values.amount,
+      received_date: receivedTimestamp,
       notes: values.notes || null,
     })
     .select("id, repair_number")
@@ -85,13 +92,18 @@ export async function createRepairAction(formData: FormData) {
   redirect(`/admin/repairs/${repair.id}?created=1`);
 }
 
-export async function updateStatusAction(repairId: string, status: RepairStatus) {
+export async function updateStatusAction(repairId: string, status: RepairStatus, eventDate: string) {
   const { supabase } = await requireAdmin();
   if (!["DONE", "COLLECTED"].includes(status)) return { error: "Invalid status" };
+  const parsedDate = z.string().date().safeParse(eventDate);
+  if (!parsedDate.success) return { error: "Select a valid status date" };
+  const eventTimestamp = `${parsedDate.data}T12:00:00.000Z`;
+  const today = new Date().toISOString().slice(0, 10);
+  if (parsedDate.data > today) return { error: "Status date cannot be in the future" };
 
   const { data: repair, error: readError } = await supabase
     .from("repairs")
-    .select("repair_number, status, customers(full_name, phone_number)")
+    .select("repair_number, status, received_date, completed_date, customers(full_name, phone_number)")
     .eq("id", repairId)
     .single();
   if (readError) return { error: readError.message };
@@ -102,11 +114,17 @@ export async function updateStatusAction(repairId: string, status: RepairStatus)
   if (allowedNextStatus[repair.status as RepairStatus] !== status) {
     return { error: `A ${repair.status} repair cannot be marked as ${status}` };
   }
+  if (parsedDate.data < repair.received_date.slice(0, 10)) {
+    return { error: "Status date cannot be before the intake date" };
+  }
+  if (status === "COLLECTED" && repair.completed_date && parsedDate.data < repair.completed_date.slice(0, 10)) {
+    return { error: "Collected date cannot be before the completed date" };
+  }
 
   const updates =
     status === "DONE"
-      ? { status, completed_date: new Date().toISOString() }
-      : { status, collected_date: new Date().toISOString() };
+      ? { status, completed_date: eventTimestamp }
+      : { status, collected_date: eventTimestamp };
   const { error } = await supabase.from("repairs").update(updates).eq("id", repairId);
   if (error) return { error: error.message };
 
@@ -123,6 +141,7 @@ export async function updateStatusAction(repairId: string, status: RepairStatus)
   }
 
   revalidatePath("/admin");
+  revalidatePath("/admin/repairs");
   revalidatePath(`/admin/repairs/${repairId}`);
   return { success: true };
 }

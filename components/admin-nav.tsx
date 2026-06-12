@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Home, LogOut, Plus, Search, Settings } from "lucide-react";
+import { ClipboardList, Home, LogOut, Plus, Search, Settings } from "lucide-react";
 import { logoutAction } from "@/app/actions";
 import { BrandMark } from "@/components/brand-mark";
 
 const links = [
   { href: "/admin", label: "Repairs home", icon: Home },
+  { href: "/admin/repairs", label: "All repairs", icon: ClipboardList },
   { href: "/admin/repairs/new", label: "New repair", icon: Plus },
   { href: "/admin/customers", label: "Customers", icon: Search },
   { href: "/admin/settings", label: "Settings", icon: Settings },
