@@ -7,8 +7,13 @@ frontend:
         - npm ci
     build:
       commands:
-        - env | grep -e '^NEXT_PUBLIC_SUPABASE_URL=' -e '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' -e '^NEXT_PUBLIC_APP_URL=' >> .env.production
-        - env | grep -e '^TWILIO_ACCOUNT_SID=' -e '^TWILIO_AUTH_TOKEN=' -e '^TWILIO_PHONE_NUMBER=' >> .env.production
+        - test -n "$NEXT_PUBLIC_SUPABASE_URL" || (echo "Missing NEXT_PUBLIC_SUPABASE_URL" && exit 1)
+        - test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" || (echo "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY" && exit 1)
+        - printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$NEXT_PUBLIC_SUPABASE_URL" >> .env.production
+        - printf 'NEXT_PUBLIC_SUPABASE_ANON_KEY=%s\n' "$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.production
+        - test -z "$TWILIO_ACCOUNT_SID" || printf 'TWILIO_ACCOUNT_SID=%s\n' "$TWILIO_ACCOUNT_SID" >> .env.production
+        - test -z "$TWILIO_AUTH_TOKEN" || printf 'TWILIO_AUTH_TOKEN=%s\n' "$TWILIO_AUTH_TOKEN" >> .env.production
+        - test -z "$TWILIO_PHONE_NUMBER" || printf 'TWILIO_PHONE_NUMBER=%s\n' "$TWILIO_PHONE_NUMBER" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next

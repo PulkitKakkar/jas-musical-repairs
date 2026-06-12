@@ -36,7 +36,6 @@ Requirements: Node.js 20+, a Supabase project, and optionally a Twilio account.
    TWILIO_ACCOUNT_SID=
    TWILIO_AUTH_TOKEN=
    TWILIO_PHONE_NUMBER=
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
    ```
 
 5. Optionally run [`supabase/seed.sql`](supabase/seed.sql) in the SQL editor.
@@ -74,11 +73,23 @@ Twilio credentials are intentionally not stored in the database. Storing an Auth
 
 1. Push the repository to GitHub and import it into Vercel.
 2. Add all environment variables from `.env.example` in **Project Settings → Environment Variables**.
-3. Set `NEXT_PUBLIC_APP_URL` to the production URL, such as `https://repairs.example.com`.
-4. Deploy. Vercel detects Next.js automatically.
-5. In Supabase Authentication URL Configuration, set the Site URL to the Vercel production URL.
+3. Deploy. Vercel detects Next.js automatically.
+4. In Supabase Authentication URL Configuration, set the Site URL to the Vercel production URL.
 
 Use separate Supabase/Twilio projects or credentials for preview and production environments.
+
+## AWS Amplify Deployment
+
+The repository includes [`amplify.yml`](amplify.yml) for Amplify Hosting compute.
+
+1. Connect the GitHub repository and `main` branch in Amplify Hosting.
+2. Add these required environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Optionally add the three `TWILIO_*` variables.
+4. Confirm the app platform is **Web Compute** and deploy.
+
+The build stops with a clear message if either required Supabase variable is missing.
 
 ## Production Checklist
 
