@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { StatusActions } from "@/components/status-actions";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
-import { formatDate, tryNormalizeUkPhone } from "@/lib/utils";
+import { formatDate, formatMoney, tryNormalizeUkPhone } from "@/lib/utils";
 
 export default async function AdminHome({
   searchParams,
@@ -105,7 +105,7 @@ export default async function AdminHome({
                     {repair.customers?.full_name} · {repair.instrument}
                   </p>
                   <p className="mt-1 text-xs text-ink/45">
-                    Received {formatDate(repair.received_date)}
+                    Received {formatDate(repair.received_date)} · Amount {formatMoney(repair.amount)}
                   </p>
                 </Link>
                 <div className="flex flex-wrap items-center justify-end gap-3">

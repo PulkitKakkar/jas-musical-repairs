@@ -4,7 +4,7 @@ import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
-import { durationDays, formatDate, formatDuration, formatMoney } from "@/lib/utils";
+import { durationDays, formatDate, formatDuration } from "@/lib/utils";
 import { tryNormalizeUkPhone } from "@/lib/utils";
 
 type Filters = {
@@ -86,13 +86,12 @@ export default async function AllRepairsPage({
       </form>
 
       <section className="card overflow-x-auto">
-        <table className="w-full min-w-[1400px] text-left text-sm">
+        <table className="w-full min-w-[1280px] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wider text-ink/40">
             <tr>
               <th className="px-4 py-4">Repair</th>
               <th className="px-4 py-4">Customer / Instrument</th>
               <th className="px-4 py-4">Phone</th>
-              <th className="px-4 py-4">Price</th>
               <th className="px-4 py-4">Status</th>
               <th className="px-4 py-4">Intake</th>
               <th className="px-4 py-4">Done</th>
@@ -125,7 +124,6 @@ function RepairRow({ repair }: { repair: Repair }) {
       <td className="px-4 py-4"><Link className="font-bold text-brand-600 hover:underline" href={`/admin/repairs/${repair.id}`}>{repair.repair_number}</Link></td>
       <td className="px-4 py-4"><p className="font-bold">{repair.customers?.full_name}</p><p className="text-xs text-ink/50">{repair.instrument}</p></td>
       <td className="px-4 py-4 whitespace-nowrap">{repair.customers?.phone_number}</td>
-      <td className="px-4 py-4 whitespace-nowrap font-medium">{formatMoney(repair.amount)}</td>
       <td className="px-4 py-4"><StatusBadge status={repair.status as RepairStatus} /></td>
       <td className="px-4 py-4">{formatDate(repair.received_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.completed_date)}</td>
