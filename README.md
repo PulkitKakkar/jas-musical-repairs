@@ -11,6 +11,7 @@ Production-ready repair tracking for JAS Musicals. Built with Next.js (React), T
 - All-repairs register with intake-date/status filters and elapsed-time reporting
 - Customer search, repair history, filtering, and Excel export
 - Received, done, and collected workflows with dates, confirmation prompts, SMS, and audit logs
+- Audited one-step status rollback for correcting accidental Done or Collected updates
 - Optional Resend email notifications for received, done, and collected events
 - Internal admin notes
 - Printable repair receipt

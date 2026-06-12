@@ -179,6 +179,36 @@ export async function updateStatusAction(repairId: string, status: RepairStatus,
   return { success: true };
 }
 
+export async function revertStatusAction(repairId: string, status: RepairStatus) {
+  const { supabase } = await requireAdmin();
+  const { data: repair, error: readError } = await supabase
+    .from("repairs")
+    .select("status")
+    .eq("id", repairId)
+    .single();
+  if (readError) return { error: readError.message };
+
+  const allowedPreviousStatus: Partial<Record<RepairStatus, RepairStatus>> = {
+    COLLECTED: "DONE",
+    DONE: "RECEIVED",
+  };
+  if (allowedPreviousStatus[repair.status as RepairStatus] !== status) {
+    return { error: `A ${repair.status} repair cannot be reverted to ${status}` };
+  }
+
+  const updates =
+    status === "DONE"
+      ? { status, collected_date: null }
+      : { status, completed_date: null, collected_date: null };
+  const { error } = await supabase.from("repairs").update(updates).eq("id", repairId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/repairs");
+  revalidatePath(`/admin/repairs/${repairId}`);
+  return { success: true };
+}
+
 export async function updateNotesAction(repairId: string, notes: string) {
   const { supabase } = await requireAdmin();
   const { error } = await supabase.from("repairs").update({ notes }).eq("id", repairId);
