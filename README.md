@@ -41,7 +41,7 @@ Requirements: Node.js 20+, a Supabase project, and optionally a Twilio account.
    TWILIO_PHONE_NUMBER=
    RESEND_API_KEY=
    EMAIL_FROM=JAS Musicals Repairs <repairs@your-verified-domain.com>
-   JAS_CONTACT_NUMBER=07304 085555
+   JAS_CONTACT_NUMBER=07304085555
    ```
 
 5. Optionally run [`supabase/seed.sql`](supabase/seed.sql) in the SQL editor.

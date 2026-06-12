@@ -17,8 +17,8 @@ export function statusMessage(
   instrument: string,
 ) {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
-  const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304 085555";
-  const footer = `This is an automated message. Please do not reply.\nFor any queries, call us on ${contactNumber}`;
+  const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304085555";
+  const footer = `This is an automated message. Please do not reply.\nFor any queries, Call or whatsapp us on ${contactNumber}`;
 
   if (status === "DONE") {
     return `JAS Musicals: Hi ${firstName}, your ${instrument} repair is complete and ready for collection.\n\nRepair reference: ${repairNumber}\n\n${footer}`;
