@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Plus, Search, Wrench } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { StatusActions } from "@/components/status-actions";
+import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
 import { formatDate, formatMoney, tryNormalizeUkPhone } from "@/lib/utils";
@@ -73,12 +74,13 @@ export default async function AdminHome({
             <span>Received</span><ArrowRight size={12} /><span>Done</span><ArrowRight size={12} /><span>Collected</span><span className="text-red-700">or Cancelled</span>
           </div>
           <form className="flex gap-2">
-            <input
-              className="input"
+            <SearchAutocomplete
               defaultValue={q}
               name="q"
               placeholder="Repair number, customer, phone…"
               required
+              scope="repairs"
+              submitOnSelect
             />
             <button className="btn-primary" aria-label="Search repairs">
               <Search size={17} />

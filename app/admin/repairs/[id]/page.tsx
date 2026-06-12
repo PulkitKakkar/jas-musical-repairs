@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ClipboardList, CircleCheck, CircleDot } from "lucide-react";
 import { NotesForm } from "@/components/notes-form";
 import { ReceiptActions } from "@/components/receipt-actions";
+import { DeleteRepairButton } from "@/components/delete-repair-button";
 import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { requireAdmin } from "@/lib/auth";
@@ -26,7 +27,7 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
   ] as const;
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex items-center gap-3"><StatusBadge status={item.status} /><StatusActions repairId={item.id} status={item.status} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /></div></div>
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex flex-wrap items-center justify-end gap-3"><StatusBadge status={item.status} /><StatusActions repairId={item.id} status={item.status} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /><DeleteRepairButton repairId={item.id} repairNumber={item.repair_number} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /></div></div>
       <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 print:hidden">

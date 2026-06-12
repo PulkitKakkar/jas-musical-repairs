@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ExportButton } from "@/components/export-button";
 import { StatusBadge } from "@/components/status-badge";
+import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
 import { formatDate, formatMoney } from "@/lib/utils";
@@ -73,7 +74,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <option value="COLLECTED">Collected</option>
           <option value="CANCELLED">Cancelled</option>
         </select>
-        <input className="input" defaultValue={filters.instrument} name="instrument" placeholder="Instrument type" />
+        <SearchAutocomplete defaultValue={filters.instrument} name="instrument" placeholder="Instrument type" scope="instruments" />
         <input className="input" defaultValue={filters.minAmount} min="0" name="minAmount" placeholder="Minimum amount" step="0.01" type="number" />
         <input className="input" defaultValue={filters.maxAmount} min="0" name="maxAmount" placeholder="Maximum amount" step="0.01" type="number" />
         <div className="flex gap-2"><button className="btn-primary flex-1">Apply filters</button><Link className="btn-secondary" href="/admin/reports">Clear</Link></div>

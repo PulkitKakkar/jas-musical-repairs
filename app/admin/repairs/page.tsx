@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Clock3, Plus } from "lucide-react";
 import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
+import { DeleteRepairButton } from "@/components/delete-repair-button";
+import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
 import { durationDays, formatDate, formatDuration } from "@/lib/utils";
@@ -72,7 +74,7 @@ export default async function AllRepairsPage({
       </section>
 
       <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
-        <input className="input" defaultValue={filters.q} name="q" placeholder="Repair, customer, phone, instrument…" />
+        <SearchAutocomplete defaultValue={filters.q} name="q" placeholder="Repair, customer, phone, instrument…" scope="repairs" />
         <select className="input" defaultValue={filters.status ?? ""} name="status">
           <option value="">All statuses</option>
           <option value="RECEIVED">Received</option>
@@ -131,7 +133,7 @@ function RepairRow({ repair }: { repair: Repair }) {
       <td className="px-4 py-4">{formatDate(repair.cancelled_date)}</td>
       <td className="px-4 py-4"><Duration value={repairDays} live={!repairEndDate} /></td>
       <td className="px-4 py-4"><Duration value={totalDays} live={!terminalDate} /></td>
-      <td className="px-4 py-4"><StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /></td>
+      <td className="px-4 py-4"><div className="flex flex-col items-end gap-2"><StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /><DeleteRepairButton repairId={repair.id} repairNumber={repair.repair_number} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /></div></td>
     </tr>
   );
 }

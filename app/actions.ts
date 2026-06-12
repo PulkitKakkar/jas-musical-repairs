@@ -219,6 +219,27 @@ export async function updateNotesAction(repairId: string, notes: string) {
   return { success: true };
 }
 
+export async function deleteRepairAction(repairId: string, repairNumberConfirmation: string) {
+  const { supabase } = await requireAdmin();
+  const { data: repair, error: readError } = await supabase
+    .from("repairs")
+    .select("repair_number")
+    .eq("id", repairId)
+    .single();
+  if (readError) return { error: readError.message };
+  if (repair.repair_number !== repairNumberConfirmation.trim()) {
+    return { error: "Repair number confirmation does not match" };
+  }
+
+  const { error } = await supabase.from("repairs").delete().eq("id", repairId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/admin/repairs");
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/reports");
+  return { success: true };
+}
+
 export async function loginAction(formData: FormData) {
   const { supabase } = await requireUnauthenticatedClient();
   const email = String(formData.get("email") ?? "");
