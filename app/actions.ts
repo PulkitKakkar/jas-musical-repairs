@@ -89,7 +89,7 @@ export async function createRepairAction(formData: FormData) {
   try {
     await sendSms(
       phoneNumber,
-      statusMessage("RECEIVED", values.customerName, repair.repair_number),
+      statusMessage("RECEIVED", values.customerName, repair.repair_number, values.instrument),
     );
   } catch (smsError) {
     console.error("Receipt SMS failed", smsError);
@@ -154,7 +154,7 @@ export async function updateStatusAction(repairId: string, status: RepairStatus,
   try {
     await sendSms(
       customer.phone_number,
-      statusMessage(status, customer.full_name, repair.repair_number),
+      statusMessage(status, customer.full_name, repair.repair_number, repair.instrument),
     );
   } catch (smsError) {
     console.error("Status SMS failed", smsError);

@@ -33,7 +33,7 @@ export async function sendStatusEmail({
       from: process.env.EMAIL_FROM,
       to: [to],
       subject: `${repairNumber}: ${instrument} repair ${status.toLowerCase()}`,
-      text: statusMessage(status, customerName, repairNumber),
+      text: statusMessage(status, customerName, repairNumber, instrument),
     }),
   });
 

@@ -41,6 +41,7 @@ Requirements: Node.js 20+, a Supabase project, and optionally a Twilio account.
    TWILIO_PHONE_NUMBER=
    RESEND_API_KEY=
    EMAIL_FROM=JAS Musicals Repairs <repairs@your-verified-domain.com>
+   JAS_CONTACT_NUMBER=07304 085555
    ```
 
 5. Optionally run [`supabase/seed.sql`](supabase/seed.sql) in the SQL editor.
@@ -79,6 +80,8 @@ Twilio credentials are intentionally not stored in the database. Storing an Auth
 ## Email Notifications
 
 Email notifications use Resend. Verify a sending domain in Resend, then set `RESEND_API_KEY` and `EMAIL_FROM`. Notifications are sent on receipt and every status change when the customer has an email address. Email delivery failures are logged without blocking repair updates.
+
+SMS and email messages share the same status-specific content and automated-message footer. Set `JAS_CONTACT_NUMBER` to control the support number included in notifications.
 
 ## Vercel Deployment
 

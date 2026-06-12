@@ -14,14 +14,19 @@ export function statusMessage(
   status: RepairStatus,
   customerName: string,
   repairNumber: string,
+  instrument: string,
 ) {
+  const firstName = customerName.trim().split(/\s+/)[0] || customerName;
+  const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304 085555";
+  const footer = `This is an automated message. Please do not reply.\nFor any queries, call us on ${contactNumber}`;
+
   if (status === "DONE") {
-    return `Hi ${customerName},\n\nYour instrument repair is complete.\n\nRepair Number: ${repairNumber}\n\nStatus: DONE\n\nPlease contact JAS Musicals to arrange collection.`;
+    return `JAS Musicals: Hi ${firstName}, your ${instrument} repair is complete and ready for collection.\n\nRepair reference: ${repairNumber}\n\n${footer}`;
   }
   if (status === "COLLECTED") {
-    return `Hi ${customerName},\n\nYour instrument has been collected.\n\nRepair Number: ${repairNumber}\n\nThank you for choosing JAS Musicals.`;
+    return `JAS Musicals: Hi ${firstName}, thank you for collecting your ${instrument}.\n\nWe appreciate your support.\n\n${footer}`;
   }
-  return `Hi ${customerName},\n\nYour instrument has been received by JAS Musicals.\n\nRepair Number: ${repairNumber}\n\nCurrent Status: RECEIVED\n\nThank you.`;
+  return `JAS Musicals: Hi ${firstName}, thank you for leaving your ${instrument} with us for repair.\n\nRepair reference: ${repairNumber}\nStatus: Received\n\n${footer}`;
 }
 
 export async function sendSms(to: string, body: string) {
