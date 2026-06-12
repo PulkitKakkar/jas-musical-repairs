@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Plus, Search, Wrench } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
+import { StatusActions } from "@/components/status-actions";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -67,6 +68,9 @@ export default async function AdminHome({
             Find a repair by repair number, customer name, phone number, or
             instrument.
           </p>
+          <div className="mb-5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-ink/45">
+            <span>Received</span><ArrowRight size={12} /><span>Done</span><ArrowRight size={12} /><span>Collected</span>
+          </div>
           <form className="flex gap-2">
             <input
               className="input"
@@ -90,12 +94,11 @@ export default async function AdminHome({
           </div>
           <div className="divide-y divide-black/10">
             {repairs.map((repair) => (
-              <Link
+              <div
                 className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-brand-50"
-                href={`/admin/repairs/${repair.id}`}
                 key={repair.id}
               >
-                <div>
+                <Link className="min-w-0 flex-1" href={`/admin/repairs/${repair.id}`}>
                   <p className="font-bold text-brand-600">{repair.repair_number}</p>
                   <p className="mt-1 text-sm">
                     {repair.customers?.full_name} · {repair.instrument}
@@ -103,12 +106,18 @@ export default async function AdminHome({
                   <p className="mt-1 text-xs text-ink/45">
                     Received {formatDate(repair.received_date)}
                   </p>
-                </div>
-                <div className="flex items-center gap-3">
+                </Link>
+                <div className="flex flex-wrap items-center justify-end gap-3">
                   <StatusBadge status={repair.status} />
-                  <ArrowRight size={17} />
+                  <StatusActions repairId={repair.id} status={repair.status} compact />
+                  <Link
+                    className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:underline"
+                    href={`/admin/repairs/${repair.id}`}
+                  >
+                    Details <ArrowRight size={14} />
+                  </Link>
                 </div>
-              </Link>
+              </div>
             ))}
             {!repairs.length && (
               <p className="p-8 text-center text-sm text-ink/50">

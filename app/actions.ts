@@ -95,7 +95,13 @@ export async function updateStatusAction(repairId: string, status: RepairStatus)
     .eq("id", repairId)
     .single();
   if (readError) return { error: readError.message };
-  if (repair.status === "COLLECTED") return { error: "Collected repairs cannot be changed" };
+  const allowedNextStatus: Partial<Record<RepairStatus, RepairStatus>> = {
+    RECEIVED: "DONE",
+    DONE: "COLLECTED",
+  };
+  if (allowedNextStatus[repair.status as RepairStatus] !== status) {
+    return { error: `A ${repair.status} repair cannot be marked as ${status}` };
+  }
 
   const updates =
     status === "DONE"
