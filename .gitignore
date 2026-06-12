@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Next.js and deployment output
+.next/
+out/
+.vercel/
+
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+*.local
+*.credentials
+*credentials.json
+*service-account*.json
+*service_role*
+*service-role*
+*secret*
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+
+# Supabase local development state
+supabase/.branches/
+supabase/.temp/
+
+# Logs, test output, and caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+.eslintcache
+*.tsbuildinfo
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
