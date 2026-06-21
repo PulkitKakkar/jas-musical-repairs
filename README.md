@@ -101,7 +101,9 @@ The reminder job is exposed at `GET /api/reminders/collection` and `POST /api/re
 Authorization: Bearer <CRON_SECRET>
 ```
 
-Run it once per day from AWS EventBridge Scheduler, cron-job.org, GitHub Actions, or another scheduler. The job finds repairs where:
+The repository includes a daily GitHub Actions workflow at [`.github/workflows/collection-reminders.yml`](.github/workflows/collection-reminders.yml). Add a GitHub Actions secret named `CRON_SECRET` with the same value as the Amplify `CRON_SECRET`. The workflow also supports manual runs from the GitHub Actions tab.
+
+You can alternatively run it once per day from AWS EventBridge Scheduler, cron-job.org, or another scheduler. The job finds repairs where:
 
 - `status = DONE`
 - `completed_date` is at least 15 days old
