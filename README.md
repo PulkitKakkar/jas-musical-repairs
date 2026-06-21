@@ -42,6 +42,10 @@ Requirements: Node.js 20+, a Supabase project, and optionally a Twilio account.
    RESEND_API_KEY=
    EMAIL_FROM=JAS Musicals Repairs <repairs@your-verified-domain.com>
    JAS_CONTACT_NUMBER=07304085555
+   SUPABASE_SERVICE_ROLE_KEY=
+   CRON_SECRET=
+   SHOP_NAME=JAS Musicals
+   OPENING_HOURS=Monday to Saturday, 10am to 6pm
    ```
 
 5. Optionally run [`supabase/seed.sql`](supabase/seed.sql) in the SQL editor.
@@ -87,6 +91,25 @@ To enable repair cancellation on an existing database, run [`supabase/migrations
 
 To add repair payment status and alternate phone numbers on an existing database, run [`supabase/migrations/20260621_add_repair_payment_and_alternate_phone.sql`](supabase/migrations/20260621_add_repair_payment_and_alternate_phone.sql) once in the Supabase SQL Editor.
 
+To enable one-time collection reminders for repairs left in `DONE` for 15 days, run [`supabase/migrations/20260621_add_collection_reminder_tracking.sql`](supabase/migrations/20260621_add_collection_reminder_tracking.sql) once in the Supabase SQL Editor.
+
+## Collection Reminders
+
+The reminder job is exposed at `GET /api/reminders/collection` and `POST /api/reminders/collection`. It must be called with:
+
+```http
+Authorization: Bearer <CRON_SECRET>
+```
+
+Run it once per day from AWS EventBridge Scheduler, cron-job.org, GitHub Actions, or another scheduler. The job finds repairs where:
+
+- `status = DONE`
+- `completed_date` is at least 15 days old
+- `collected_date` is still empty
+- `collection_reminder_sent_at` is empty
+
+After a reminder SMS is sent, `collection_reminder_sent_at` is saved so the customer is not reminded repeatedly for the same repair.
+
 ## Vercel Deployment
 
 1. Push the repository to GitHub and import it into Vercel.
@@ -104,8 +127,9 @@ The repository includes [`amplify.yml`](amplify.yml) for Amplify Hosting compute
 2. Add these required environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Optionally add the three `TWILIO_*` variables plus `RESEND_API_KEY` and `EMAIL_FROM`.
-4. Confirm the app platform is **Web Compute** and deploy.
+3. Add `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` if collection reminders are enabled.
+4. Optionally add the three `TWILIO_*` variables plus `RESEND_API_KEY`, `EMAIL_FROM`, `SHOP_NAME`, `OPENING_HOURS`, and `JAS_CONTACT_NUMBER`.
+5. Confirm the app platform is **Web Compute** and deploy.
 
 The build stops with a clear message if either required Supabase variable is missing.
 

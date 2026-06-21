@@ -79,6 +79,7 @@ create table public.repairs (
   completed_date timestamptz,
   collected_date timestamptz,
   cancelled_date timestamptz,
+  collection_reminder_sent_at timestamptz,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

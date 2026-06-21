@@ -17,6 +17,10 @@ frontend:
         - test -z "$RESEND_API_KEY" || printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> .env.production
         - test -z "$EMAIL_FROM" || printf 'EMAIL_FROM=%s\n' "$EMAIL_FROM" >> .env.production
         - test -z "$JAS_CONTACT_NUMBER" || printf 'JAS_CONTACT_NUMBER=%s\n' "$JAS_CONTACT_NUMBER" >> .env.production
+        - test -z "$SUPABASE_SERVICE_ROLE_KEY" || printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY" >> .env.production
+        - test -z "$CRON_SECRET" || printf 'CRON_SECRET=%s\n' "$CRON_SECRET" >> .env.production
+        - test -z "$SHOP_NAME" || printf 'SHOP_NAME=%s\n' "$SHOP_NAME" >> .env.production
+        - test -z "$OPENING_HOURS" || printf 'OPENING_HOURS=%s\n' "$OPENING_HOURS" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
