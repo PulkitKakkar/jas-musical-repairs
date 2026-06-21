@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { differenceInCalendarDays, format } from "date-fns";
+import type { HirePaymentMethod } from "@/lib/types";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
@@ -23,6 +24,11 @@ export function todayInputValue() {
 export function durationDays(from?: string | null, to?: string | null) {
   if (!from) return null;
   return Math.max(0, differenceInCalendarDays(to ? new Date(to) : new Date(), new Date(from)));
+}
+
+export function inclusiveDurationDays(from?: string | null, to?: string | null) {
+  const days = durationDays(from, to);
+  return days === null ? null : Math.max(1, days + 1);
 }
 
 export function formatDuration(days: number | null) {
@@ -79,4 +85,26 @@ export function splitName(fullName: string) {
     firstName: parts[0] ?? "",
     lastName: parts.slice(1).join(" "),
   };
+}
+
+export function calculateHireAmounts({
+  hireCost,
+  securityDeposit,
+  extraCharge,
+  paymentMethod,
+}: {
+  hireCost: number;
+  securityDeposit: number;
+  extraCharge: number;
+  paymentMethod: HirePaymentMethod;
+}) {
+  const hireVat = roundMoney(hireCost * 0.2);
+  const hireTotal = roundMoney(hireCost + hireVat);
+  const cardProcessingFee = paymentMethod === "CARD" ? roundMoney(securityDeposit * 0.015) : 0;
+  const returnAmount = roundMoney(securityDeposit - cardProcessingFee - hireTotal - extraCharge);
+  return { hireVat, hireTotal, cardProcessingFee, returnAmount };
+}
+
+function roundMoney(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }

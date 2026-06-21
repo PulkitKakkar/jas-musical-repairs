@@ -20,7 +20,7 @@ export function SearchAutocomplete({
   name: string;
   defaultValue?: string;
   placeholder: string;
-  scope: "repairs" | "customers" | "instruments";
+  scope: "repairs" | "customers" | "instruments" | "hires";
   className?: string;
   required?: boolean;
   submitOnSelect?: boolean;

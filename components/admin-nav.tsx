@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ClipboardList, Home, LogOut, Plus, Search, Settings } from "lucide-react";
+import { BarChart3, ClipboardList, Home, LogOut, Music, Plus, Search, Settings } from "lucide-react";
 import { logoutAction } from "@/app/actions";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -7,6 +7,7 @@ const links = [
   { href: "/admin", label: "Repairs home", icon: Home },
   { href: "/admin/repairs", label: "All repairs", icon: ClipboardList },
   { href: "/admin/repairs/new", label: "New repair", icon: Plus },
+  { href: "/admin/hires", label: "Hires", icon: Music },
   { href: "/admin/customers", label: "Customers", icon: Search },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { sendSms, statusMessage } from "@/lib/twilio";
+import { hireCreatedMessage, sendSms, statusMessage } from "@/lib/twilio";
 import { sendStatusEmail } from "@/lib/email";
 import { normalizePhone, splitName } from "@/lib/utils";
 import type { PaymentStatus, RepairStatus } from "@/lib/types";
@@ -22,6 +22,26 @@ const repairSchema = z.object({
   alternatePhoneCountryCode: z.string().trim().default("+44"),
   receivedDate: z.string().date(),
   notes: z.string().trim().optional(),
+});
+
+const hireSchema = z.object({
+  customerName: z.string().trim().min(2),
+  phoneNumber: z.string().trim().min(7),
+  phoneCountryCode: z.string().trim().default("+44"),
+  email: z.string().trim().email().or(z.literal("")),
+  instrument: z.string().trim().min(2),
+  hireDate: z.string().date(),
+  returnDueDate: z.string().date(),
+  hireCost: z.coerce.number().min(0),
+  securityDeposit: z.coerce.number().min(0),
+  paymentMethod: z.enum(["CASH", "CARD"]).default("CASH"),
+  extraCharge: z.coerce.number().min(0).default(0),
+  notes: z.string().trim().optional(),
+});
+
+const returnHireSchema = z.object({
+  returnedDate: z.string().date(),
+  extraCharge: z.coerce.number().min(0).default(0),
 });
 
 export async function createRepairAction(formData: FormData) {
@@ -136,6 +156,97 @@ export async function createRepairAction(formData: FormData) {
 
   revalidatePath("/admin");
   redirect(`/admin/repairs/${repair.id}?created=1`);
+}
+
+export async function createHireAction(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = hireSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid hire details" };
+  }
+  const values = parsed.data;
+  if (values.returnDueDate < values.hireDate) {
+    return { error: "Return date cannot be before hire date" };
+  }
+
+  let phoneNumber: string;
+  try {
+    phoneNumber = normalizePhone(values.phoneNumber, values.phoneCountryCode);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Invalid phone number" };
+  }
+
+  const { firstName, lastName } = splitName(values.customerName);
+  const { data: existingCustomer } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("phone_number", phoneNumber)
+    .maybeSingle();
+
+  let customerId = existingCustomer?.id;
+  if (customerId) {
+    const { error } = await supabase
+      .from("customers")
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        email: values.email || null,
+      })
+      .eq("id", customerId);
+    if (error) return { error: error.message };
+  } else {
+    const { data, error } = await supabase
+      .from("customers")
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        phone_number: phoneNumber,
+        email: values.email || null,
+      })
+      .select("id")
+      .single();
+    if (error) return { error: error.message };
+    customerId = data.id;
+  }
+
+  const { data: hire, error } = await supabase
+    .from("hires")
+    .insert({
+      customer_id: customerId,
+      instrument: values.instrument,
+      hire_date: `${values.hireDate}T12:00:00.000Z`,
+      return_due_date: `${values.returnDueDate}T12:00:00.000Z`,
+      hire_cost: values.hireCost,
+      security_deposit: values.securityDeposit,
+      payment_method: values.paymentMethod,
+      extra_charge: values.extraCharge,
+      notes: values.notes || null,
+    })
+    .select("id, hire_number, hire_date, return_due_date, hire_total, security_deposit, return_amount")
+    .single();
+  if (error) return { error: error.message };
+
+  try {
+    await sendSms(
+      phoneNumber,
+      hireCreatedMessage({
+        customerName: values.customerName,
+        hireNumber: hire.hire_number,
+        instrument: values.instrument,
+        hireDate: hire.hire_date,
+        returnDueDate: hire.return_due_date,
+        hireTotal: Number(hire.hire_total),
+        securityDeposit: Number(hire.security_deposit),
+        returnAmount: Number(hire.return_amount),
+      }),
+    );
+    await supabase.from("hires").update({ hire_sms_sent_at: new Date().toISOString() }).eq("id", hire.id);
+  } catch (smsError) {
+    console.error("Hire SMS failed", smsError);
+  }
+
+  revalidatePath("/admin/hires");
+  redirect("/admin/hires?created=1");
 }
 
 export async function updateStatusAction(repairId: string, status: RepairStatus, eventDate: string) {
@@ -257,6 +368,64 @@ export async function updatePaymentStatusAction(repairId: string, paymentStatus:
   revalidatePath("/admin/repairs");
   revalidatePath(`/admin/repairs/${repairId}`);
   revalidatePath("/admin/reports");
+  return { success: true };
+}
+
+export async function returnHireAction(hireId: string, formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = returnHireSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid return details" };
+  }
+  const values = parsed.data;
+
+  const { data: hire, error: readError } = await supabase
+    .from("hires")
+    .select("status, hire_date")
+    .eq("id", hireId)
+    .single();
+  if (readError) return { error: readError.message };
+  if (hire.status !== "HIRED") return { error: "This hire has already been returned" };
+  if (values.returnedDate < hire.hire_date.slice(0, 10)) {
+    return { error: "Returned date cannot be before hire date" };
+  }
+
+  const { error } = await supabase
+    .from("hires")
+    .update({
+      status: "RETURNED",
+      returned_date: `${values.returnedDate}T12:00:00.000Z`,
+      extra_charge: values.extraCharge,
+    })
+    .eq("id", hireId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/hires");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function revertHireAction(hireId: string) {
+  const { supabase } = await requireAdmin();
+  const { data: hire, error: readError } = await supabase
+    .from("hires")
+    .select("status")
+    .eq("id", hireId)
+    .single();
+  if (readError) return { error: readError.message };
+  if (hire.status !== "RETURNED") return { error: "Only returned hires can be reverted" };
+
+  const { error } = await supabase
+    .from("hires")
+    .update({
+      status: "HIRED",
+      returned_date: null,
+    })
+    .eq("id", hireId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/hires");
+  revalidatePath("/admin");
   return { success: true };
 }
 

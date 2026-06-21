@@ -1,6 +1,6 @@
 import twilio from "twilio";
 import type { RepairStatus } from "@/lib/types";
-import { normalizePhone } from "@/lib/utils";
+import { formatDate, formatMoney, normalizePhone } from "@/lib/utils";
 
 const TERMS_URL = "https://tinyurl.com/yh89tmhb";
 
@@ -46,6 +46,51 @@ export function collectionReminderMessage(customerName: string, instrument: stri
 
   return `${shopName}: Hi ${firstName}, your ${instrument} repair is complete and ready for collection.\n\n` +
     `Please collect the instrument by ${deadlineText}. After this date, storage charges will apply.\n\n` +
+    `Opening hours: ${openingHours}\n\n` +
+    `Terms and conditions: ${TERMS_URL}\n\n` +
+    `This is an automated message. Please do not reply.\n` +
+    `For any queries, call us on ${contactNumber}.`;
+}
+
+export function hireCreatedMessage({
+  customerName,
+  hireNumber,
+  instrument,
+  hireDate,
+  returnDueDate,
+  hireTotal,
+  securityDeposit,
+  returnAmount,
+}: {
+  customerName: string;
+  hireNumber: string;
+  instrument: string;
+  hireDate: string;
+  returnDueDate: string;
+  hireTotal: number;
+  securityDeposit: number;
+  returnAmount: number;
+}) {
+  const firstName = customerName.trim().split(/\s+/)[0] || customerName;
+  const footer = notificationFooter();
+  return `JAS Musicals: Hi ${firstName}, your ${instrument} hire has been created.\n\n` +
+    `Hire reference: ${hireNumber}\n` +
+    `Hire date: ${formatDate(hireDate)}\n` +
+    `Return due: ${formatDate(returnDueDate)}\n` +
+    `Hire total incl. VAT: ${formatMoney(hireTotal)}\n` +
+    `Security deposit: ${formatMoney(securityDeposit)}\n` +
+    `Estimated return amount: ${formatMoney(returnAmount)}\n\n` +
+    `${footer}`;
+}
+
+export function hireReturnReminderMessage(customerName: string, instrument: string, returnDueDate: string) {
+  const firstName = customerName.trim().split(/\s+/)[0] || customerName;
+  const shopName = process.env.SHOP_NAME || "JAS Musicals";
+  const openingHours = process.env.OPENING_HOURS || "Monday to Saturday, 10am to 6pm";
+  const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304085555";
+
+  return `${shopName}: Hi ${firstName}, your ${instrument} hire is due for return today.\n\n` +
+    `Return date: ${formatDate(returnDueDate)}\n\n` +
     `Opening hours: ${openingHours}\n\n` +
     `Terms and conditions: ${TERMS_URL}\n\n` +
     `This is an automated message. Please do not reply.\n` +

@@ -1,4 +1,4 @@
-name: Collection reminders
+name: Customer reminders
 
 on:
   schedule:
@@ -6,12 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  send-collection-reminders:
+  send-customer-reminders:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger reminder job
+      - name: Trigger repair collection reminders
         run: |
           curl --fail --show-error --silent \
             --request POST \
             --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             https://main.d3nbquzzxxolms.amplifyapp.com/api/reminders/collection
+      - name: Trigger hire return reminders
+        run: |
+          curl --fail --show-error --silent \
+            --request POST \
+            --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://main.d3nbquzzxxolms.amplifyapp.com/api/reminders/hires

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { Repair } from "@/lib/types";
+import type { Hire, Repair } from "@/lib/types";
 import { formatDate, formatMoney, tryNormalizeUkPhone } from "@/lib/utils";
 
 type Suggestion = {
@@ -51,6 +51,26 @@ export async function GET(request: Request) {
         detail: `${customer.phone_number} · ${customer.repairs.length} repair${customer.repairs.length === 1 ? "" : "s"} · Last intake ${formatDate(latestRepairDate)}`,
       };
     });
+    return NextResponse.json({ suggestions });
+  }
+
+  if (scope === "hires") {
+    const { data } = await supabase
+      .from("hires")
+      .select("*, customers(*)")
+      .order("hire_date", { ascending: false })
+      .limit(500);
+    const normalizedPhone = tryNormalizeUkPhone(query);
+    const suggestions = ((data ?? []) as Hire[]).filter((hire) =>
+      hire.hire_number.toLowerCase().includes(query) ||
+      hire.instrument.toLowerCase().includes(query) ||
+      hire.customers?.full_name.toLowerCase().includes(query) ||
+      hire.customers?.phone_number.includes(normalizedPhone ?? query),
+    ).slice(0, 8).map<Suggestion>((hire) => ({
+      value: hire.hire_number,
+      label: `${hire.hire_number} · ${hire.customers?.full_name}`,
+      detail: `${hire.instrument} · Hire ${formatDate(hire.hire_date)} · Due ${formatDate(hire.return_due_date)} · ${hire.status} · ${formatMoney(hire.hire_total)}`,
+    }));
     return NextResponse.json({ suggestions });
   }
 
