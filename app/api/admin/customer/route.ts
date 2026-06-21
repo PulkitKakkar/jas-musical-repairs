@@ -18,8 +18,8 @@ export async function GET(request: Request) {
     digits.startsWith("44") ? `+${digits}` : "",
   ].filter(Boolean);
   const [nameResult, phoneResult] = await Promise.all([
-    supabase.from("customers").select("*").ilike("full_name", `%${safeQuery}%`).limit(8),
-    supabase.from("customers").select("*").or(phoneQueries.map((phoneQuery) => `phone_number.ilike.%${phoneQuery}%`).join(",")).limit(8),
+    supabase.from("customers").select("*, repairs(received_date)").ilike("full_name", `%${safeQuery}%`).limit(8),
+    supabase.from("customers").select("*, repairs(received_date)").or(phoneQueries.map((phoneQuery) => `phone_number.ilike.%${phoneQuery}%`).join(",")).limit(8),
   ]);
   const customers = [...(nameResult.data ?? []), ...(phoneResult.data ?? [])]
     .filter((customer, index, all) => all.findIndex((item) => item.id === customer.id) === index)

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { Repair } from "@/lib/types";
-import { formatMoney, tryNormalizeUkPhone } from "@/lib/utils";
+import { formatDate, formatMoney, tryNormalizeUkPhone } from "@/lib/utils";
 
 type Suggestion = {
   value: string;
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   if (scope === "customers") {
     const { data } = await supabase
       .from("customers")
-      .select("full_name, phone_number, repairs(repair_number)")
+      .select("full_name, phone_number, repairs(repair_number, received_date)")
       .order("created_at", { ascending: false })
       .limit(500);
     const normalizedPhone = tryNormalizeUkPhone(query);
@@ -39,11 +39,18 @@ export async function GET(request: Request) {
       customer.full_name.toLowerCase().includes(query) ||
       customer.phone_number.includes(normalizedPhone ?? query) ||
       customer.repairs.some((repair) => repair.repair_number.toLowerCase().includes(query)),
-    ).slice(0, 8).map((customer) => ({
-      value: customer.full_name,
-      label: customer.full_name,
-      detail: `${customer.phone_number} · ${customer.repairs.length} repair${customer.repairs.length === 1 ? "" : "s"}`,
-    }));
+    ).slice(0, 8).map((customer) => {
+      const latestRepairDate = customer.repairs
+        .map((repair) => repair.received_date)
+        .filter(Boolean)
+        .sort()
+        .at(-1);
+      return {
+        value: customer.full_name,
+        label: customer.full_name,
+        detail: `${customer.phone_number} · ${customer.repairs.length} repair${customer.repairs.length === 1 ? "" : "s"} · Last intake ${formatDate(latestRepairDate)}`,
+      };
+    });
     return NextResponse.json({ suggestions });
   }
 
@@ -62,7 +69,7 @@ export async function GET(request: Request) {
   ).slice(0, 8).map<Suggestion>((repair) => ({
     value: repair.repair_number,
     label: `${repair.repair_number} · ${repair.customers?.full_name}`,
-    detail: `${repair.instrument} · ${repair.status} · ${repair.payment_status ?? "UNPAID"} · ${formatMoney(repair.amount)}`,
+    detail: `${repair.instrument} · Intake ${formatDate(repair.received_date)} · ${repair.status} · ${repair.payment_status ?? "UNPAID"} · ${formatMoney(repair.amount)}`,
   }));
   return NextResponse.json({ suggestions });
 }

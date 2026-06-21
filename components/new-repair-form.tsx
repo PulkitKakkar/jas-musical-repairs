@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createRepairAction } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
-import { countryCodeOptions, todayInputValue } from "@/lib/utils";
+import { countryCodeOptions, formatDate, todayInputValue } from "@/lib/utils";
 import type { Customer } from "@/lib/types";
+
+type CustomerSuggestion = Customer & {
+  repairs?: { received_date: string | null }[];
+};
 
 export function NewRepairForm() {
   const [name, setName] = useState("");
@@ -13,7 +17,7 @@ export function NewRepairForm() {
   const [email, setEmail] = useState("");
   const [found, setFound] = useState(false);
   const [activeLookup, setActiveLookup] = useState<"name" | "phone" | null>(null);
-  const [suggestions, setSuggestions] = useState<Customer[]>([]);
+  const [suggestions, setSuggestions] = useState<CustomerSuggestion[]>([]);
 
   const lookupValue = activeLookup === "name" ? name : activeLookup === "phone" ? phone : "";
   useEffect(() => {
@@ -64,16 +68,19 @@ export function NewRepairForm() {
   );
 }
 
-function CustomerSuggestions({ customers, onSelect }: { customers: Customer[]; onSelect: (customer: Customer) => void }) {
+function CustomerSuggestions({ customers, onSelect }: { customers: CustomerSuggestion[]; onSelect: (customer: Customer) => void }) {
   if (!customers.length) return null;
   return (
     <div className="absolute z-20 mt-1 max-h-64 w-full overflow-auto border border-black/10 bg-white shadow-xl">
-      {customers.map((customer) => (
-        <button className="block w-full border-b border-black/5 px-4 py-3 text-left hover:bg-brand-50" key={customer.id} onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(customer)} type="button">
-          <span className="block text-sm font-bold">{customer.full_name}</span>
-          <span className="block text-xs text-ink/50">{customer.phone_number}{customer.email ? ` · ${customer.email}` : ""}</span>
-        </button>
-      ))}
+      {customers.map((customer) => {
+        const latestRepairDate = customer.repairs?.map((repair) => repair.received_date).filter(Boolean).sort().at(-1);
+        return (
+          <button className="block w-full border-b border-black/5 px-4 py-3 text-left hover:bg-brand-50" key={customer.id} onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(customer)} type="button">
+            <span className="block text-sm font-bold">{customer.full_name}</span>
+            <span className="block text-xs text-ink/50">{customer.phone_number}{customer.email ? ` · ${customer.email}` : ""} · Last intake {formatDate(latestRepairDate)}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
