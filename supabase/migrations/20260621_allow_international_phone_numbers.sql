@@ -45,11 +45,20 @@ alter table public.customers
 drop constraint if exists customers_phone_number_check;
 
 alter table public.customers
+drop constraint if exists customers_phone_number_e164_check;
+
+alter table public.customers
 add constraint customers_phone_number_e164_check
 check (phone_number ~ '^\+[1-9][0-9]{7,14}$');
 
 alter table public.repairs
+add column if not exists alternate_phone_number text;
+
+alter table public.repairs
 drop constraint if exists repairs_alternate_phone_number_check;
+
+alter table public.repairs
+drop constraint if exists repairs_alternate_phone_number_e164_check;
 
 alter table public.repairs
 add constraint repairs_alternate_phone_number_e164_check
@@ -74,3 +83,15 @@ begin
   return new;
 end;
 $$;
+
+drop trigger if exists customers_normalize_phone on public.customers;
+
+create trigger customers_normalize_phone
+before insert or update of phone_number on public.customers
+for each row execute function public.normalize_customer_phone();
+
+drop trigger if exists repairs_normalize_alternate_phone on public.repairs;
+
+create trigger repairs_normalize_alternate_phone
+before insert or update of alternate_phone_number on public.repairs
+for each row execute function public.normalize_repair_alternate_phone();
