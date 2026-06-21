@@ -70,6 +70,10 @@ create table public.repairs (
   instrument text not null,
   issue_description text not null,
   amount numeric(10,2) not null default 0 check (amount >= 0),
+  payment_status text not null default 'UNPAID'
+    check (payment_status in ('UNPAID', 'PARTIAL', 'PAID')),
+  alternate_phone_number text
+    check (alternate_phone_number is null or alternate_phone_number = public.normalize_uk_phone(alternate_phone_number)),
   status public.repair_status not null default 'RECEIVED',
   received_date timestamptz not null default now(),
   completed_date timestamptz,
@@ -105,6 +109,21 @@ $$;
 
 create trigger repairs_updated_at before update on public.repairs
 for each row execute function public.set_updated_at();
+
+create or replace function public.normalize_repair_alternate_phone()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if new.alternate_phone_number is not null and trim(new.alternate_phone_number) <> '' then
+    new.alternate_phone_number = public.normalize_uk_phone(new.alternate_phone_number);
+  else
+    new.alternate_phone_number = null;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger repairs_normalize_alternate_phone before insert or update of alternate_phone_number
+on public.repairs for each row execute function public.normalize_repair_alternate_phone();
 
 create or replace function public.log_repair_status_change()
 returns trigger language plpgsql security definer set search_path = public as $$

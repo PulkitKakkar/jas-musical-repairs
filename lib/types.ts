@@ -1,4 +1,5 @@
 export type RepairStatus = "RECEIVED" | "DONE" | "COLLECTED" | "CANCELLED";
+export type PaymentStatus = "UNPAID" | "PARTIAL" | "PAID";
 
 export type Customer = {
   id: string;
@@ -17,6 +18,8 @@ export type Repair = {
   instrument: string;
   issue_description: string;
   amount: number;
+  payment_status: PaymentStatus;
+  alternate_phone_number: string | null;
   status: RepairStatus;
   received_date: string;
   completed_date: string | null;

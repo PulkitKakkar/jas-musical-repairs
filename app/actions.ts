@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 import { sendSms, statusMessage } from "@/lib/twilio";
 import { sendStatusEmail } from "@/lib/email";
 import { normalizeUkPhone, splitName } from "@/lib/utils";
-import type { RepairStatus } from "@/lib/types";
+import type { PaymentStatus, RepairStatus } from "@/lib/types";
 
 const repairSchema = z.object({
   customerName: z.string().trim().min(2),
@@ -16,6 +16,8 @@ const repairSchema = z.object({
   instrument: z.string().trim().min(2),
   issueDescription: z.string().trim().min(3),
   amount: z.coerce.number().min(0),
+  paymentStatus: z.enum(["UNPAID", "PARTIAL", "PAID"]).default("UNPAID"),
+  alternatePhoneNumber: z.string().trim().optional(),
   receivedDate: z.string().date(),
   notes: z.string().trim().optional(),
 });
@@ -28,8 +30,10 @@ export async function createRepairAction(formData: FormData) {
   }
   const values = parsed.data;
   let phoneNumber: string;
+  let alternatePhoneNumber: string | null = null;
   try {
     phoneNumber = normalizeUkPhone(values.phoneNumber);
+    alternatePhoneNumber = values.alternatePhoneNumber ? normalizeUkPhone(values.alternatePhoneNumber) : null;
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Invalid phone number" };
   }
@@ -72,20 +76,40 @@ export async function createRepairAction(formData: FormData) {
     customerId = data.id;
   }
 
-  const { data: repair, error } = await supabase
+  const repairPayload = {
+    customer_id: customerId,
+    instrument: values.instrument,
+    issue_description: values.issueDescription,
+    amount: values.amount,
+    payment_status: values.paymentStatus,
+    alternate_phone_number: alternatePhoneNumber,
+    received_date: receivedTimestamp,
+    notes: values.notes || null,
+  };
+  let { data: repair, error } = await supabase
     .from("repairs")
-    .insert({
-      customer_id: customerId,
-      instrument: values.instrument,
-      issue_description: values.issueDescription,
-      amount: values.amount,
-      received_date: receivedTimestamp,
-      notes: values.notes || null,
-    })
+    .insert(repairPayload)
     .select("id, repair_number")
     .single();
+  if (error && /payment_status|alternate_phone_number/i.test(error.message)) {
+    const fallback = await supabase
+      .from("repairs")
+      .insert({
+        customer_id: repairPayload.customer_id,
+        instrument: repairPayload.instrument,
+        issue_description: repairPayload.issue_description,
+        amount: repairPayload.amount,
+        received_date: repairPayload.received_date,
+        notes: repairPayload.notes,
+      })
+      .select("id, repair_number")
+      .single();
+    repair = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) return { error: error.message };
+  if (!repair) return { error: "Repair was not created" };
   try {
     await sendSms(
       phoneNumber,
@@ -216,6 +240,21 @@ export async function updateNotesAction(repairId: string, notes: string) {
   const { error } = await supabase.from("repairs").update({ notes }).eq("id", repairId);
   if (error) return { error: error.message };
   revalidatePath(`/admin/repairs/${repairId}`);
+  return { success: true };
+}
+
+export async function updatePaymentStatusAction(repairId: string, paymentStatus: PaymentStatus) {
+  const { supabase } = await requireAdmin();
+  if (!["UNPAID", "PARTIAL", "PAID"].includes(paymentStatus)) return { error: "Invalid payment status" };
+  const { error } = await supabase
+    .from("repairs")
+    .update({ payment_status: paymentStatus })
+    .eq("id", repairId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/admin/repairs");
+  revalidatePath(`/admin/repairs/${repairId}`);
+  revalidatePath("/admin/reports");
   return { success: true };
 }
 

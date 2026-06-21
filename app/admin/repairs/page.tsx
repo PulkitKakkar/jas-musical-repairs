@@ -3,6 +3,7 @@ import { Clock3, Plus } from "lucide-react";
 import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { DeleteRepairButton } from "@/components/delete-repair-button";
+import { PaymentStatusSelect } from "@/components/payment-status-select";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
@@ -42,7 +43,8 @@ export default async function AllRepairsPage({
     repair.repair_number.toLowerCase().includes(textQuery) ||
     repair.instrument.toLowerCase().includes(textQuery) ||
     repair.customers?.full_name.toLowerCase().includes(textQuery) ||
-    repair.customers?.phone_number.includes(normalizedPhoneQuery ?? textQuery),
+    repair.customers?.phone_number.includes(normalizedPhoneQuery ?? textQuery) ||
+    repair.alternate_phone_number?.includes(normalizedPhoneQuery ?? textQuery),
   );
   const openRepairs = repairs.filter((repair) => !["COLLECTED", "CANCELLED"].includes(repair.status));
   const averageOpenDays = openRepairs.length
@@ -88,13 +90,15 @@ export default async function AllRepairsPage({
       </form>
 
       <section className="card overflow-x-auto">
-        <table className="w-full min-w-[1280px] text-left text-sm">
+        <table className="w-full min-w-[1480px] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wider text-ink/40">
             <tr>
               <th className="px-4 py-4">Repair</th>
               <th className="px-4 py-4">Customer / Instrument</th>
               <th className="px-4 py-4">Phone</th>
+              <th className="px-4 py-4">Alt phone</th>
               <th className="px-4 py-4">Status</th>
+              <th className="px-4 py-4">Payment</th>
               <th className="px-4 py-4">Intake</th>
               <th className="px-4 py-4">Done</th>
               <th className="px-4 py-4">Collected</th>
@@ -126,7 +130,9 @@ function RepairRow({ repair }: { repair: Repair }) {
       <td className="px-4 py-4"><Link className="font-bold text-brand-600 hover:underline" href={`/admin/repairs/${repair.id}`}>{repair.repair_number}</Link></td>
       <td className="px-4 py-4"><p className="font-bold">{repair.customers?.full_name}</p><p className="text-xs text-ink/50">{repair.instrument}</p></td>
       <td className="px-4 py-4 whitespace-nowrap">{repair.customers?.phone_number}</td>
+      <td className="px-4 py-4 whitespace-nowrap">{repair.alternate_phone_number ?? "—"}</td>
       <td className="px-4 py-4"><StatusBadge status={repair.status as RepairStatus} /></td>
+      <td className="px-4 py-4"><PaymentStatusSelect repairId={repair.id} initialStatus={repair.payment_status ?? "UNPAID"} compact /></td>
       <td className="px-4 py-4">{formatDate(repair.received_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.completed_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.collected_date)}</td>

@@ -57,11 +57,12 @@ export async function GET(request: Request) {
     repair.repair_number.toLowerCase().includes(query) ||
     repair.instrument.toLowerCase().includes(query) ||
     repair.customers?.full_name.toLowerCase().includes(query) ||
-    repair.customers?.phone_number.includes(normalizedPhone ?? query),
+    repair.customers?.phone_number.includes(normalizedPhone ?? query) ||
+    repair.alternate_phone_number?.includes(normalizedPhone ?? query),
   ).slice(0, 8).map<Suggestion>((repair) => ({
     value: repair.repair_number,
     label: `${repair.repair_number} · ${repair.customers?.full_name}`,
-    detail: `${repair.instrument} · ${repair.status} · ${formatMoney(repair.amount)}`,
+    detail: `${repair.instrument} · ${repair.status} · ${repair.payment_status ?? "UNPAID"} · ${formatMoney(repair.amount)}`,
   }));
   return NextResponse.json({ suggestions });
 }

@@ -85,6 +85,8 @@ SMS and email messages share the same status-specific content and automated-mess
 
 To enable repair cancellation on an existing database, run [`supabase/migrations/20260612_add_cancelled_repairs.sql`](supabase/migrations/20260612_add_cancelled_repairs.sql) once in the Supabase SQL Editor.
 
+To add repair payment status and alternate phone numbers on an existing database, run [`supabase/migrations/20260621_add_repair_payment_and_alternate_phone.sql`](supabase/migrations/20260621_add_repair_payment_and_alternate_phone.sql) once in the Supabase SQL Editor.
+
 ## Vercel Deployment
 
 1. Push the repository to GitHub and import it into Vercel.

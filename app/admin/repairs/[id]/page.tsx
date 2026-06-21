@@ -5,6 +5,7 @@ import { ReceiptActions } from "@/components/receipt-actions";
 import { DeleteRepairButton } from "@/components/delete-repair-button";
 import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
+import { PaymentStatusSelect } from "@/components/payment-status-select";
 import { requireAdmin } from "@/lib/auth";
 import type { AuditLog, Repair } from "@/lib/types";
 import { durationDays, formatDate, formatDuration, formatMoney } from "@/lib/utils";
@@ -35,7 +36,7 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
             <TimeCard label="Total elapsed time" days={durationDays(item.received_date, item.collected_date ?? item.cancelled_date)} live={!item.collected_date && !item.cancelled_date} />
           </div>
           <div className="card p-6 print:shadow-none"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-ink/40">JAS Musicals repair receipt</p><h2 className="mt-1 text-2xl font-black">{item.repair_number}</h2></div><StatusBadge status={item.status} /></div>
-            <dl className="grid gap-5 text-sm sm:grid-cols-2"><Detail label="Customer" value={item.customers?.full_name} /><Detail label="Phone" value={item.customers?.phone_number} /><Detail label="Email" value={item.customers?.email ?? "—"} /><Detail label="Instrument" value={item.instrument} /><Detail label="Issue" value={item.issue_description} /><Detail label="Amount" value={formatMoney(item.amount)} /></dl>
+            <dl className="grid gap-5 text-sm sm:grid-cols-2"><Detail label="Customer" value={item.customers?.full_name} /><Detail label="Phone" value={item.customers?.phone_number} /><Detail label="Alternate phone" value={item.alternate_phone_number ?? "—"} /><Detail label="Email" value={item.customers?.email ?? "—"} /><Detail label="Instrument" value={item.instrument} /><Detail label="Issue" value={item.issue_description} /><Detail label="Amount" value={formatMoney(item.amount)} /><div><dt className="text-xs font-bold uppercase tracking-wider text-ink/40">Payment</dt><dd className="mt-1"><PaymentStatusSelect repairId={item.id} initialStatus={item.payment_status ?? "UNPAID"} /></dd></div></dl>
             <div className="mt-7"><ReceiptActions /></div>
           </div>
           <div className="card p-6 print:hidden"><h2 className="mb-4 font-bold">Internal notes</h2><NotesForm repairId={item.id} initialNotes={item.notes ?? ""} /></div>

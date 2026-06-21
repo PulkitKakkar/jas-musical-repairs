@@ -7,15 +7,16 @@ export function ExportButton({ repairs }: { repairs: Repair[] }) {
   return <button className="btn-secondary" onClick={() => {
     const rows = repairs.map((r) => ({
       "Repair Number": r.repair_number, "Customer Name": r.customers?.full_name,
-      "Phone Number": r.customers?.phone_number, Email: r.customers?.email,
-      Instrument: r.instrument, Issue: r.issue_description, Amount: r.amount,
+      "Phone Number": r.customers?.phone_number, "Alternate Phone Number": r.alternate_phone_number,
+      Email: r.customers?.email, Instrument: r.instrument, Issue: r.issue_description,
+      Amount: r.amount, "Payment Status": r.payment_status,
       Status: r.status, "Received Date": r.received_date,
       "Completed Date": r.completed_date, "Collected Date": r.collected_date,
       "Cancelled Date": r.cancelled_date,
     }));
     const headers = Object.keys(rows[0] ?? {
-      "Repair Number": "", "Customer Name": "", "Phone Number": "", Email: "",
-      Instrument: "", Issue: "", Amount: "", Status: "", "Received Date": "",
+      "Repair Number": "", "Customer Name": "", "Phone Number": "", "Alternate Phone Number": "",
+      Email: "", Instrument: "", Issue: "", Amount: "", "Payment Status": "", Status: "", "Received Date": "",
       "Completed Date": "", "Collected Date": "",
       "Cancelled Date": "",
     });
