@@ -1,6 +1,6 @@
 import twilio from "twilio";
 import type { RepairStatus } from "@/lib/types";
-import { normalizeUkPhone } from "@/lib/utils";
+import { normalizePhone } from "@/lib/utils";
 
 const TERMS_URL = "https://tinyurl.com/yh89tmhb";
 
@@ -62,7 +62,7 @@ export async function sendSms(to: string, body: string) {
     process.env.TWILIO_AUTH_TOKEN!,
   );
   const message = await client.messages.create({
-    to: normalizeUkPhone(to),
+    to: normalizePhone(to),
     from: process.env.TWILIO_PHONE_NUMBER!,
     body,
   });

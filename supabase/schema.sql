@@ -2,7 +2,7 @@ create extension if not exists pgcrypto;
 
 create type public.repair_status as enum ('RECEIVED', 'DONE', 'COLLECTED', 'CANCELLED');
 
-create or replace function public.normalize_uk_phone(input_phone text)
+create or replace function public.normalize_phone(input_phone text, default_country_code text default '+44')
 returns text
 language plpgsql
 immutable
@@ -10,23 +10,36 @@ strict
 set search_path = public
 as $$
 declare
+  trimmed text := trim(input_phone);
+  country text := regexp_replace(coalesce(default_country_code, '+44'), '\D', '', 'g');
   digits text := regexp_replace(trim(input_phone), '\D', '', 'g');
 begin
-  if digits like '0044%' then
-    digits := substring(digits from 5);
-  elsif digits like '44%' then
-    digits := substring(digits from 3);
-  elsif trim(input_phone) like '+%' or digits like '00%' then
-    raise exception 'Phone number must be a UK number';
-  elsif digits like '0%' then
-    digits := substring(digits from 2);
+  if trimmed = '' then
+    raise exception 'Phone number is required';
   end if;
 
-  if digits !~ '^[0-9]{9,10}$' then
-    raise exception 'Invalid UK phone number';
+  if trimmed like '+%' then
+    return '+' || digits;
+  elsif digits like '00%' then
+    return '+' || substring(digits from 3);
+  elsif digits like country || '%' and length(digits) > length(country) + 6 then
+    return '+' || digits;
+  elsif digits like '0%' then
+    return '+' || country || substring(digits from 2);
   end if;
-  return '+44' || digits;
+
+  return '+' || country || digits;
 end;
+$$;
+
+create or replace function public.normalize_uk_phone(input_phone text)
+returns text
+language sql
+immutable
+strict
+set search_path = public
+as $$
+  select public.normalize_phone(input_phone, '+44');
 $$;
 
 create table public.customers (
@@ -35,7 +48,7 @@ create table public.customers (
   last_name text not null default '',
   full_name text generated always as (trim(first_name || ' ' || last_name)) stored,
   phone_number text not null unique
-    check (phone_number = public.normalize_uk_phone(phone_number)),
+    check (phone_number ~ '^\+[1-9][0-9]{7,14}$'),
   email text,
   created_at timestamptz not null default now()
 );
@@ -43,7 +56,7 @@ create table public.customers (
 create or replace function public.normalize_customer_phone()
 returns trigger language plpgsql set search_path = public as $$
 begin
-  new.phone_number = public.normalize_uk_phone(new.phone_number);
+  new.phone_number = public.normalize_phone(new.phone_number, '+44');
   return new;
 end;
 $$;
@@ -73,7 +86,7 @@ create table public.repairs (
   payment_status text not null default 'UNPAID'
     check (payment_status in ('UNPAID', 'PARTIAL', 'PAID')),
   alternate_phone_number text
-    check (alternate_phone_number is null or alternate_phone_number = public.normalize_uk_phone(alternate_phone_number)),
+    check (alternate_phone_number is null or alternate_phone_number ~ '^\+[1-9][0-9]{7,14}$'),
   status public.repair_status not null default 'RECEIVED',
   received_date timestamptz not null default now(),
   completed_date timestamptz,
@@ -115,7 +128,7 @@ create or replace function public.normalize_repair_alternate_phone()
 returns trigger language plpgsql set search_path = public as $$
 begin
   if new.alternate_phone_number is not null and trim(new.alternate_phone_number) <> '' then
-    new.alternate_phone_number = public.normalize_uk_phone(new.alternate_phone_number);
+    new.alternate_phone_number = public.normalize_phone(new.alternate_phone_number, '+44');
   else
     new.alternate_phone_number = null;
   end if;

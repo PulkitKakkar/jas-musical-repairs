@@ -30,31 +30,48 @@ export function formatDuration(days: number | null) {
   return `${days} day${days === 1 ? "" : "s"}`;
 }
 
-export function normalizeUkPhone(value: string) {
+export const countryCodeOptions = [
+  { code: "+44", label: "UK (+44)" },
+  { code: "+49", label: "Germany (+49)" },
+  { code: "+35", label: "International (+35)" },
+  { code: "+31", label: "Netherlands (+31)" },
+  { code: "+32", label: "Belgium (+32)" },
+];
+
+export function normalizePhone(value: string, countryCode = "+44") {
   const trimmed = value.trim();
   if (!trimmed) throw new Error("Phone number is required");
 
+  const countryDigits = countryCode.replace(/\D/g, "") || "44";
   let digits = trimmed.replace(/\D/g, "");
-  if (digits.startsWith("0044")) digits = digits.slice(4);
-  else if (digits.startsWith("44")) digits = digits.slice(2);
-  else if (trimmed.startsWith("+") || digits.startsWith("00")) {
-    throw new Error("Enter a UK phone number");
-  }
-  else if (digits.startsWith("0")) digits = digits.slice(1);
+  if (trimmed.startsWith("+")) return validateE164(`+${digits}`);
+  if (digits.startsWith("00")) return validateE164(`+${digits.slice(2)}`);
+  if (digits.startsWith(countryDigits) && digits.length > countryDigits.length + 6) return validateE164(`+${digits}`);
+  if (digits.startsWith("0")) digits = digits.slice(1);
 
-  if (!/^\d{9,10}$/.test(digits)) {
-    throw new Error("Enter a valid UK phone number");
-  }
-  return `+44${digits}`;
+  return validateE164(`+${countryDigits}${digits}`);
 }
 
-export function tryNormalizeUkPhone(value: string) {
+function validateE164(value: string) {
+  if (!/^\+[1-9]\d{7,14}$/.test(value)) {
+    throw new Error("Enter a valid phone number");
+  }
+  return value;
+}
+
+export function normalizeUkPhone(value: string) {
+  return normalizePhone(value, "+44");
+}
+
+export function tryNormalizePhone(value: string, countryCode = "+44") {
   try {
-    return normalizeUkPhone(value);
+    return normalizePhone(value, countryCode);
   } catch {
     return null;
   }
 }
+
+export const tryNormalizeUkPhone = tryNormalizePhone;
 
 export function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/);

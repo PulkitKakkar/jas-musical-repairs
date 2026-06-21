@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createRepairAction } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
-import { todayInputValue } from "@/lib/utils";
+import { countryCodeOptions, todayInputValue } from "@/lib/utils";
 import type { Customer } from "@/lib/types";
 
 export function NewRepairForm() {
@@ -49,10 +49,10 @@ export function NewRepairForm() {
       const result = await createRepairAction(formData);
       if (result?.error) toast.error(result.error);
     }} className="card grid gap-5 p-6 sm:grid-cols-2 sm:p-8">
-      <div className="relative"><label className="label">Phone number</label><input autoComplete="off" className="input" name="phoneNumber" type="tel" placeholder="+44 or 07…" value={phone} onFocus={() => setActiveLookup("phone")} onChange={(e) => { setPhone(e.target.value); setFound(false); setActiveLookup("phone"); }} required /><CustomerSuggestions customers={activeLookup === "phone" ? suggestions : []} onSelect={loadCustomer} /><p className="mt-1 text-xs text-ink/45">Select a suggestion or enter the full number. Customers are matched by phone when saved.</p>{found && <p className="mt-1 text-xs font-medium text-brand-600">Existing customer details loaded</p>}</div>
+      <div className="relative"><label className="label">Phone number</label><div className="flex gap-2"><select className="input max-w-36" name="phoneCountryCode" defaultValue="+44" aria-label="Phone country code">{countryCodeOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select><input autoComplete="off" className="input" name="phoneNumber" type="tel" placeholder="Phone number" value={phone} onFocus={() => setActiveLookup("phone")} onChange={(e) => { setPhone(e.target.value); setFound(false); setActiveLookup("phone"); }} required /></div><CustomerSuggestions customers={activeLookup === "phone" ? suggestions : []} onSelect={loadCustomer} /><p className="mt-1 text-xs text-ink/45">UK is the default. Use the dropdown for international numbers or enter a full +number.</p>{found && <p className="mt-1 text-xs font-medium text-brand-600">Existing customer details loaded</p>}</div>
       <div className="relative"><label className="label">Customer name</label><input autoComplete="off" className="input" name="customerName" value={name} onFocus={() => setActiveLookup("name")} onChange={(e) => { setName(e.target.value); setFound(false); setActiveLookup("name"); }} required /><CustomerSuggestions customers={activeLookup === "name" ? suggestions : []} onSelect={loadCustomer} /></div>
       <div><label className="label">Email address</label><input className="input" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-      <div><label className="label">Alternate phone number</label><input className="input" name="alternatePhoneNumber" type="tel" placeholder="+44 or 07…" /><p className="mt-1 text-xs text-ink/45">Optional contact number for this repair.</p></div>
+      <div><label className="label">Alternate phone number</label><div className="flex gap-2"><select className="input max-w-36" name="alternatePhoneCountryCode" defaultValue="+44" aria-label="Alternate phone country code">{countryCodeOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select><input className="input" name="alternatePhoneNumber" type="tel" placeholder="Optional number" /></div><p className="mt-1 text-xs text-ink/45">Optional contact number for this repair.</p></div>
       <div><label className="label">Instrument</label><input className="input" name="instrument" required /></div>
       <div className="sm:col-span-2"><label className="label">Issue description</label><textarea className="input min-h-28" name="issueDescription" required /></div>
       <div><label className="label">Amount (£)</label><input className="input" name="amount" type="number" min="0" step="0.01" required /></div>

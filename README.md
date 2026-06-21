@@ -67,7 +67,7 @@ The schema uses snake_case SQL identifiers, represented by the requested fields 
 
 Repair numbers are generated atomically by a Postgres sequence, preventing collisions during concurrent intake. RLS denies anonymous access and allows authenticated admins to manage records.
 
-Customer phone numbers are normalized to UK E.164 format (`+44…`) before they are stored or sent to Twilio. Existing installations should run [`supabase/migrations/20260612_normalize_uk_phone_numbers.sql`](supabase/migrations/20260612_normalize_uk_phone_numbers.sql) once in the Supabase SQL editor. The migration stops without changing data if it finds invalid or duplicate-normalized phone numbers.
+Customer phone numbers are stored in E.164 format, for example `+447700900123` or `+491729668354`. UK is the default country code in forms, with a country-code dropdown available for international numbers. Existing installations should run [`supabase/migrations/20260621_allow_international_phone_numbers.sql`](supabase/migrations/20260621_allow_international_phone_numbers.sql) once in the Supabase SQL editor before storing non-UK customer phone numbers.
 
 ## Twilio Integration
 

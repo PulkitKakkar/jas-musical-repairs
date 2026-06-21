@@ -11,10 +11,15 @@ export async function GET(request: Request) {
 
   const safeQuery = query.replace(/[%_]/g, "");
   const digits = query.replace(/\D/g, "");
-  const phoneQuery = digits.startsWith("0") ? `+44${digits.slice(1)}` : digits.startsWith("44") ? `+${digits}` : query;
+  const phoneQueries = [
+    query,
+    digits ? `+${digits}` : "",
+    digits.startsWith("0") ? `+44${digits.slice(1)}` : "",
+    digits.startsWith("44") ? `+${digits}` : "",
+  ].filter(Boolean);
   const [nameResult, phoneResult] = await Promise.all([
     supabase.from("customers").select("*").ilike("full_name", `%${safeQuery}%`).limit(8),
-    supabase.from("customers").select("*").ilike("phone_number", `%${phoneQuery}%`).limit(8),
+    supabase.from("customers").select("*").or(phoneQueries.map((phoneQuery) => `phone_number.ilike.%${phoneQuery}%`).join(",")).limit(8),
   ]);
   const customers = [...(nameResult.data ?? []), ...(phoneResult.data ?? [])]
     .filter((customer, index, all) => all.findIndex((item) => item.id === customer.id) === index)

@@ -6,18 +6,20 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { sendSms, statusMessage } from "@/lib/twilio";
 import { sendStatusEmail } from "@/lib/email";
-import { normalizeUkPhone, splitName } from "@/lib/utils";
+import { normalizePhone, splitName } from "@/lib/utils";
 import type { PaymentStatus, RepairStatus } from "@/lib/types";
 
 const repairSchema = z.object({
   customerName: z.string().trim().min(2),
   phoneNumber: z.string().trim().min(7),
+  phoneCountryCode: z.string().trim().default("+44"),
   email: z.string().trim().email().or(z.literal("")),
   instrument: z.string().trim().min(2),
   issueDescription: z.string().trim().min(3),
   amount: z.coerce.number().min(0),
   paymentStatus: z.enum(["UNPAID", "PARTIAL", "PAID"]).default("UNPAID"),
   alternatePhoneNumber: z.string().trim().optional(),
+  alternatePhoneCountryCode: z.string().trim().default("+44"),
   receivedDate: z.string().date(),
   notes: z.string().trim().optional(),
 });
@@ -32,8 +34,8 @@ export async function createRepairAction(formData: FormData) {
   let phoneNumber: string;
   let alternatePhoneNumber: string | null = null;
   try {
-    phoneNumber = normalizeUkPhone(values.phoneNumber);
-    alternatePhoneNumber = values.alternatePhoneNumber ? normalizeUkPhone(values.alternatePhoneNumber) : null;
+    phoneNumber = normalizePhone(values.phoneNumber, values.phoneCountryCode);
+    alternatePhoneNumber = values.alternatePhoneNumber ? normalizePhone(values.alternatePhoneNumber, values.alternatePhoneCountryCode) : null;
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Invalid phone number" };
   }
