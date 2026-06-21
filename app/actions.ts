@@ -33,6 +33,7 @@ const hireSchema = z.object({
   hireDate: z.string().date(),
   returnDueDate: z.string().date(),
   hireCost: z.coerce.number().min(0),
+  lateReturnDailyCharge: z.coerce.number().min(0).default(0),
   securityDeposit: z.coerce.number().min(0),
   paymentMethod: z.enum(["CASH", "CARD"]).default("CASH"),
   extraCharge: z.coerce.number().min(0).default(0),
@@ -217,12 +218,13 @@ export async function createHireAction(formData: FormData) {
       hire_date: `${values.hireDate}T12:00:00.000Z`,
       return_due_date: `${values.returnDueDate}T12:00:00.000Z`,
       hire_cost: values.hireCost,
+      late_return_daily_charge: values.lateReturnDailyCharge,
       security_deposit: values.securityDeposit,
       payment_method: values.paymentMethod,
       extra_charge: values.extraCharge,
       notes: values.notes || null,
     })
-    .select("id, hire_number, hire_date, return_due_date, hire_total, security_deposit, return_amount")
+    .select("id, hire_number, hire_date, return_due_date, hire_cost, late_return_daily_charge, security_deposit")
     .single();
   if (error) return { error: error.message };
 
@@ -231,13 +233,12 @@ export async function createHireAction(formData: FormData) {
       phoneNumber,
       hireCreatedMessage({
         customerName: values.customerName,
-        hireNumber: hire.hire_number,
         instrument: values.instrument,
         hireDate: hire.hire_date,
         returnDueDate: hire.return_due_date,
-        hireTotal: Number(hire.hire_total),
+        hireCost: Number(hire.hire_cost),
+        lateReturnDailyCharge: Number(hire.late_return_daily_charge),
         securityDeposit: Number(hire.security_deposit),
-        returnAmount: Number(hire.return_amount),
       }),
     );
     await supabase.from("hires").update({ hire_sms_sent_at: new Date().toISOString() }).eq("id", hire.id);

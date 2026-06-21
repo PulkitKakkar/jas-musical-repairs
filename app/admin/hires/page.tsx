@@ -87,7 +87,7 @@ export default async function HiresPage({
       </form>
 
       <section className="card overflow-x-auto">
-        <table className="w-full min-w-[1500px] text-left text-sm">
+        <table className="w-full min-w-[1600px] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wider text-ink/40">
             <tr>
               <th className="px-4 py-4">Hire</th>
@@ -99,6 +99,7 @@ export default async function HiresPage({
               <th className="px-4 py-4">Returned</th>
               <th className="px-4 py-4">Duration</th>
               <th className="px-4 py-4">Hire total</th>
+              <th className="px-4 py-4">Late / day</th>
               <th className="px-4 py-4">Deposit</th>
               <th className="px-4 py-4">Payment</th>
               <th className="px-4 py-4">Extra</th>
@@ -130,6 +131,7 @@ function HireRow({ hire }: { hire: Hire }) {
       <td className="px-4 py-4">{formatDate(hire.returned_date)}</td>
       <td className="px-4 py-4">{hire.status === "HIRED" && <Clock3 className="mr-1 inline" size={13} />}{formatDuration(activeDuration)}</td>
       <td className="px-4 py-4">{formatMoney(hire.hire_total)}</td>
+      <td className="px-4 py-4">{formatMoney(hire.late_return_daily_charge)}</td>
       <td className="px-4 py-4">{formatMoney(hire.security_deposit)}</td>
       <td className="px-4 py-4">{hire.payment_method === "CARD" ? `Card (${formatMoney(hire.card_processing_fee)} fee)` : "Cash"}</td>
       <td className="px-4 py-4">{formatMoney(hire.extra_charge)}</td>

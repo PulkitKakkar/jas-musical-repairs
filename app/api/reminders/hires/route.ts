@@ -7,6 +7,7 @@ type ReminderHire = {
   hire_number: string;
   instrument: string;
   return_due_date: string;
+  late_return_daily_charge: number;
   customers: {
     full_name: string;
     phone_number: string;
@@ -37,7 +38,7 @@ async function sendHireReturnReminders(request: Request) {
 
   const { data, error } = await supabase
     .from("hires")
-    .select("id, hire_number, instrument, return_due_date, customers(full_name, phone_number)")
+    .select("id, hire_number, instrument, return_due_date, late_return_daily_charge, customers(full_name, phone_number)")
     .eq("status", "HIRED")
     .is("returned_date", null)
     .is("return_reminder_sent_at", null)
@@ -57,7 +58,7 @@ async function sendHireReturnReminders(request: Request) {
     try {
       await sendSms(
         customer.phone_number,
-        hireReturnReminderMessage(customer.full_name, hire.instrument, hire.return_due_date),
+        hireReturnReminderMessage(customer.full_name, hire.instrument, hire.return_due_date, Number(hire.late_return_daily_charge)),
       );
       const { error: updateError } = await supabase
         .from("hires")

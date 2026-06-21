@@ -46,6 +46,7 @@ export type Hire = {
   hire_cost: number;
   hire_vat: number;
   hire_total: number;
+  late_return_daily_charge: number;
   security_deposit: number;
   payment_method: HirePaymentMethod;
   card_processing_fee: number;

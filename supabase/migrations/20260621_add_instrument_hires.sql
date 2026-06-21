@@ -24,6 +24,7 @@ create table if not exists public.hires (
   hire_cost numeric(10,2) not null default 0 check (hire_cost >= 0),
   hire_vat numeric(10,2) generated always as (round(hire_cost * 0.20, 2)) stored,
   hire_total numeric(10,2) generated always as (round(hire_cost * 1.20, 2)) stored,
+  late_return_daily_charge numeric(10,2) not null default 0 check (late_return_daily_charge >= 0),
   security_deposit numeric(10,2) not null default 0 check (security_deposit >= 0),
   payment_method text not null default 'CASH' check (payment_method in ('CASH', 'CARD')),
   card_processing_fee numeric(10,2) generated always as (

@@ -3,6 +3,12 @@ import type { RepairStatus } from "@/lib/types";
 import { formatDate, formatMoney, normalizePhone } from "@/lib/utils";
 
 const TERMS_URL = "https://tinyurl.com/yh89tmhb";
+const HIRE_TERMS_PATH = "/docs/jas-instrument-hire-terms-and-conditions.pdf";
+
+function absoluteAppUrl(path: string) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://main.d3nbquzzxxolms.amplifyapp.com";
+  return `${appUrl}${path}`;
+}
 
 function notificationFooter() {
   const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304085555";
@@ -54,36 +60,39 @@ export function collectionReminderMessage(customerName: string, instrument: stri
 
 export function hireCreatedMessage({
   customerName,
-  hireNumber,
   instrument,
   hireDate,
   returnDueDate,
-  hireTotal,
+  hireCost,
+  lateReturnDailyCharge,
   securityDeposit,
-  returnAmount,
 }: {
   customerName: string;
-  hireNumber: string;
   instrument: string;
   hireDate: string;
   returnDueDate: string;
-  hireTotal: number;
+  hireCost: number;
+  lateReturnDailyCharge: number;
   securityDeposit: number;
-  returnAmount: number;
 }) {
-  const firstName = customerName.trim().split(/\s+/)[0] || customerName;
-  const footer = notificationFooter();
-  return `JAS Musicals: Hi ${firstName}, your ${instrument} hire has been created.\n\n` +
-    `Hire reference: ${hireNumber}\n` +
-    `Hire date: ${formatDate(hireDate)}\n` +
-    `Return due: ${formatDate(returnDueDate)}\n` +
-    `Hire total incl. VAT: ${formatMoney(hireTotal)}\n` +
-    `Security deposit: ${formatMoney(securityDeposit)}\n` +
-    `Estimated return amount: ${formatMoney(returnAmount)}\n\n` +
-    `${footer}`;
+  const termsUrl = absoluteAppUrl(HIRE_TERMS_PATH);
+  return `Hi ${customerName},\n\n` +
+    `Thank you for hiring an instrument from JAS Musicals.\n\n` +
+    `Instrument: ${instrument}\n\n` +
+    `Hire Period:\n` +
+    `From: ${formatDate(hireDate)}\n` +
+    `To: ${formatDate(returnDueDate)}\n\n` +
+    `Hire Cost: ${formatMoney(hireCost)}\n` +
+    `Security Deposit: ${formatMoney(securityDeposit)}\n` +
+    `Late return charge: ${formatMoney(lateReturnDailyCharge)} per day\n\n` +
+    `Please ensure the instrument is returned by the due date shown above. If the instrument is not returned by ${formatDate(returnDueDate)}, additional hire charges may apply at ${formatMoney(lateReturnDailyCharge)} per day.\n\n` +
+    `Hire terms and conditions: ${termsUrl}\n\n` +
+    `If you have any questions, please contact us.\n\n` +
+    `Thank you for choosing JAS Musicals.\n\n` +
+    `The JAS Team`;
 }
 
-export function hireReturnReminderMessage(customerName: string, instrument: string, returnDueDate: string) {
+export function hireReturnReminderMessage(customerName: string, instrument: string, returnDueDate: string, lateReturnDailyCharge: number) {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
   const shopName = process.env.SHOP_NAME || "JAS Musicals";
   const openingHours = process.env.OPENING_HOURS || "Monday to Saturday, 10am to 6pm";
@@ -91,6 +100,7 @@ export function hireReturnReminderMessage(customerName: string, instrument: stri
 
   return `${shopName}: Hi ${firstName}, your ${instrument} hire is due for return today.\n\n` +
     `Return date: ${formatDate(returnDueDate)}\n\n` +
+    `Late return charge after this date: ${formatMoney(lateReturnDailyCharge)} per day.\n\n` +
     `Opening hours: ${openingHours}\n\n` +
     `Terms and conditions: ${TERMS_URL}\n\n` +
     `This is an automated message. Please do not reply.\n` +

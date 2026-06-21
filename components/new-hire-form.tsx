@@ -19,6 +19,7 @@ export function NewHireForm() {
   const [activeLookup, setActiveLookup] = useState<"name" | "phone" | null>(null);
   const [suggestions, setSuggestions] = useState<CustomerSuggestion[]>([]);
   const [hireCost, setHireCost] = useState("0");
+  const [lateReturnDailyCharge, setLateReturnDailyCharge] = useState("0");
   const [securityDeposit, setSecurityDeposit] = useState("0");
   const [extraCharge, setExtraCharge] = useState("0");
   const [paymentMethod, setPaymentMethod] = useState<HirePaymentMethod>("CASH");
@@ -86,6 +87,7 @@ export function NewHireForm() {
       <div><label className="label">Hire date</label><input className="input" name="hireDate" type="date" defaultValue={todayInputValue()} required /></div>
       <div><label className="label">Instrument return date</label><input className="input" name="returnDueDate" type="date" defaultValue={todayInputValue()} required /></div>
       <div><label className="label">Hire cost before VAT (£)</label><input className="input" name="hireCost" type="number" min="0" step="0.01" value={hireCost} onChange={(event) => setHireCost(event.target.value)} required /></div>
+      <div><label className="label">Late return charge per day (£)</label><input className="input" name="lateReturnDailyCharge" type="number" min="0" step="0.01" value={lateReturnDailyCharge} onChange={(event) => setLateReturnDailyCharge(event.target.value)} required /><p className="mt-1 text-xs text-ink/45">Shown in the customer hire message and used if the instrument is returned late.</p></div>
       <div><label className="label">Security deposit (£)</label><input className="input" name="securityDeposit" type="number" min="0" step="0.01" value={securityDeposit} onChange={(event) => setSecurityDeposit(event.target.value)} required /></div>
       <div><label className="label">Payment method</label><select className="input" name="paymentMethod" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as HirePaymentMethod)}><option value="CASH">Cash</option><option value="CARD">Card</option></select></div>
       <div><label className="label">Extra charge (£)</label><input className="input" name="extraCharge" type="number" min="0" step="0.01" value={extraCharge} onChange={(event) => setExtraCharge(event.target.value)} /></div>
