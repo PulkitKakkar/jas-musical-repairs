@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteRepairAction } from "@/app/actions";
+import { LoadingOverlay } from "@/components/loading-overlay";
 
 export function DeleteRepairButton({
   repairId,
@@ -40,6 +41,7 @@ export function DeleteRepairButton({
 
   return (
     <>
+      {pending && <LoadingOverlay label="Deleting…" />}
       <button className={compact ? "whitespace-nowrap border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100" : "inline-flex items-center gap-2 border border-red-300 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100"} onClick={() => setOpen(true)} type="button">
         {!compact && <Trash2 size={16} />}Delete
       </button>

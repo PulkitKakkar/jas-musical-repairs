@@ -63,7 +63,7 @@ export function hireCreatedMessage({
   instrument,
   hireDate,
   returnDueDate,
-  hireCost,
+  hireTotal,
   lateReturnDailyCharge,
   securityDeposit,
 }: {
@@ -71,7 +71,7 @@ export function hireCreatedMessage({
   instrument: string;
   hireDate: string;
   returnDueDate: string;
-  hireCost: number;
+  hireTotal: number;
   lateReturnDailyCharge: number;
   securityDeposit: number;
 }) {
@@ -82,7 +82,7 @@ export function hireCreatedMessage({
     `Hire Period:\n` +
     `From: ${formatDate(hireDate)}\n` +
     `To: ${formatDate(returnDueDate)}\n\n` +
-    `Hire Cost: ${formatMoney(hireCost)}\n` +
+    `Hire Cost incl. VAT: ${formatMoney(hireTotal)}\n` +
     `Security Deposit: ${formatMoney(securityDeposit)}\n` +
     `Late return charge: ${formatMoney(lateReturnDailyCharge)} per day\n\n` +
     `Please ensure the instrument is returned by the due date shown above. If the instrument is not returned by ${formatDate(returnDueDate)}, additional hire charges may apply at ${formatMoney(lateReturnDailyCharge)} per day.\n\n` +
@@ -92,19 +92,38 @@ export function hireCreatedMessage({
     `The JAS Team`;
 }
 
-export function hireReturnReminderMessage(customerName: string, instrument: string, returnDueDate: string, lateReturnDailyCharge: number) {
-  const firstName = customerName.trim().split(/\s+/)[0] || customerName;
-  const shopName = process.env.SHOP_NAME || "JAS Musicals";
-  const openingHours = process.env.OPENING_HOURS || "Monday to Saturday, 10am to 6pm";
-  const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304085555";
-
-  return `${shopName}: Hi ${firstName}, your ${instrument} hire is due for return today.\n\n` +
-    `Return date: ${formatDate(returnDueDate)}\n\n` +
-    `Late return charge after this date: ${formatMoney(lateReturnDailyCharge)} per day.\n\n` +
-    `Opening hours: ${openingHours}\n\n` +
-    `Terms and conditions: ${TERMS_URL}\n\n` +
-    `This is an automated message. Please do not reply.\n` +
-    `For any queries, call us on ${contactNumber}.`;
+export function hireReturnReminderMessage({
+  customerName,
+  instrument,
+  hireDate,
+  returnDueDate,
+  hireTotal,
+  lateReturnDailyCharge,
+  securityDeposit,
+}: {
+  customerName: string;
+  instrument: string;
+  hireDate: string;
+  returnDueDate: string;
+  hireTotal: number;
+  lateReturnDailyCharge: number;
+  securityDeposit: number;
+}) {
+  const termsUrl = absoluteAppUrl(HIRE_TERMS_PATH);
+  return `Hi ${customerName},\n\n` +
+    `This is a reminder that your hired instrument from JAS Musicals is due to be returned today.\n\n` +
+    `Instrument: ${instrument}\n\n` +
+    `Hire Period:\n` +
+    `From: ${formatDate(hireDate)}\n` +
+    `To: ${formatDate(returnDueDate)}\n\n` +
+    `Hire Cost incl. VAT: ${formatMoney(hireTotal)}\n` +
+    `Security Deposit: ${formatMoney(securityDeposit)}\n` +
+    `Late return charge: ${formatMoney(lateReturnDailyCharge)} per day\n\n` +
+    `Please ensure the instrument is returned by the due date shown above. If the instrument is not returned by ${formatDate(returnDueDate)}, additional hire charges may apply at ${formatMoney(lateReturnDailyCharge)} per day.\n\n` +
+    `Hire terms and conditions: ${termsUrl}\n\n` +
+    `If you have any questions, please contact us.\n\n` +
+    `Thank you for choosing JAS Musicals.\n\n` +
+    `The JAS Team`;
 }
 
 export async function sendSms(to: string, body: string) {

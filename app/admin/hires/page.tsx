@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Clock3, Plus } from "lucide-react";
-import { HireReturnAction, HireRevertAction } from "@/components/hire-return-action";
+import { HireAdminActions } from "@/components/hire-admin-actions";
 import { HireStatusBadge } from "@/components/hire-status-badge";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { requireAdmin } from "@/lib/auth";
 import type { Hire, HireStatus } from "@/lib/types";
 import { formatDate, formatDuration, formatMoney, inclusiveDurationDays, tryNormalizePhone } from "@/lib/utils";
+
+const TABLE_LIMIT = 150;
 
 type Filters = {
   status?: string;
@@ -23,7 +25,7 @@ export default async function HiresPage({
   const { supabase } = await requireAdmin();
   let query = supabase
     .from("hires")
-    .select("*, customers(*)")
+    .select("id, hire_number, customer_id, instrument, hire_date, return_due_date, returned_date, hire_duration_days, hire_cost, hire_vat, hire_total, late_return_daily_charge, security_deposit, payment_method, card_processing_fee, extra_charge, return_amount, status, hire_sms_sent_at, return_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
     .order("hire_date", { ascending: false });
 
   if (filters.status && ["HIRED", "RETURNED"].includes(filters.status)) {
@@ -35,13 +37,14 @@ export default async function HiresPage({
   const { data, error } = await query;
   const normalizedPhoneQuery = filters.q ? tryNormalizePhone(filters.q) : null;
   const textQuery = filters.q?.trim().toLowerCase();
-  const hires = ((data ?? []) as Hire[]).filter((hire) =>
+  const hires = ((data ?? []) as unknown as Hire[]).filter((hire) =>
     !textQuery ||
     hire.hire_number.toLowerCase().includes(textQuery) ||
     hire.instrument.toLowerCase().includes(textQuery) ||
     hire.customers?.full_name.toLowerCase().includes(textQuery) ||
     hire.customers?.phone_number.includes(normalizedPhoneQuery ?? textQuery),
   );
+  const visibleHires = hires.slice(0, TABLE_LIMIT);
 
   const activeHires = hires.filter((hire) => hire.status === "HIRED");
   const overdueHires = activeHires.filter((hire) => new Date(hire.return_due_date) < startOfToday());
@@ -74,8 +77,8 @@ export default async function HiresPage({
         <p className="mt-1 text-xs text-ink/45">Calculated as deposit minus hire total including VAT, extra charge, and card fee where applicable.</p>
       </section>
 
-      <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
-        <SearchAutocomplete defaultValue={filters.q} name="q" placeholder="Hire, customer, phone, instrument…" scope="hires" />
+      <form className="card mb-6 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-6">
+        <SearchAutocomplete defaultValue={filters.q} name="q" placeholder="Hire, customer, phone, instrument…" scope="hires" wrapperClassName="relative min-w-0 flex-1 sm:col-span-2" />
         <select className="input" defaultValue={filters.status ?? ""} name="status">
           <option value="">All statuses</option>
           <option value="HIRED">Hired</option>
@@ -87,6 +90,11 @@ export default async function HiresPage({
       </form>
 
       <section className="card overflow-x-auto">
+        {hires.length > visibleHires.length && (
+          <p className="border-b px-4 py-3 text-xs font-medium text-ink/50">
+            Showing first {visibleHires.length} of {hires.length} filtered hires. Use search or filters to narrow the list.
+          </p>
+        )}
         <table className="w-full min-w-[1600px] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wider text-ink/40">
             <tr>
@@ -104,11 +112,12 @@ export default async function HiresPage({
               <th className="px-4 py-4">Payment</th>
               <th className="px-4 py-4">Extra</th>
               <th className="px-4 py-4">Return amount</th>
+              <th className="px-4 py-4">SMS</th>
               <th className="px-4 py-4">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/10">
-            {hires.map((hire) => <HireRow hire={hire} key={hire.id} />)}
+            {visibleHires.map((hire) => <HireRow hire={hire} key={hire.id} />)}
           </tbody>
         </table>
         {!hires.length && <p className="p-10 text-center text-sm text-ink/50">No hires match these filters.</p>}
@@ -136,25 +145,8 @@ function HireRow({ hire }: { hire: Hire }) {
       <td className="px-4 py-4">{hire.payment_method === "CARD" ? `Card (${formatMoney(hire.card_processing_fee)} fee)` : "Cash"}</td>
       <td className="px-4 py-4">{formatMoney(hire.extra_charge)}</td>
       <td className={`px-4 py-4 font-bold ${Number(hire.return_amount) < 0 ? "text-red-700" : ""}`}>{formatMoney(hire.return_amount)}</td>
-      <td className="px-4 py-4">
-        {hire.status === "HIRED" ? (
-          <HireReturnAction
-            customerName={hire.customers?.full_name ?? "Unknown customer"}
-            hireCost={Number(hire.hire_cost)}
-            hireId={hire.id}
-            initialExtraCharge={Number(hire.extra_charge)}
-            instrument={hire.instrument}
-            paymentMethod={hire.payment_method}
-            securityDeposit={Number(hire.security_deposit)}
-          />
-        ) : (
-          <HireRevertAction
-            customerName={hire.customers?.full_name ?? "Unknown customer"}
-            hireId={hire.id}
-            instrument={hire.instrument}
-          />
-        )}
-      </td>
+      <td className="px-4 py-4">{hire.hire_sms_sent_at ? formatDate(hire.hire_sms_sent_at) : <span className="font-bold text-orange-700">Not sent</span>}</td>
+      <td className="px-4 py-4"><HireAdminActions hire={hire} /></td>
     </tr>
   );
 }

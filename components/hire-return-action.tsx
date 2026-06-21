@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { returnHireAction, revertHireAction } from "@/app/actions";
+import { LoadingOverlay } from "@/components/loading-overlay";
 import type { HirePaymentMethod } from "@/lib/types";
 import { calculateHireAmounts, formatMoney, todayInputValue } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ export function HireReturnAction({
 
   return (
     <>
+      {pending && <LoadingOverlay />}
       <button className="btn-primary whitespace-nowrap px-3 py-2 text-xs" onClick={() => setOpen(true)} type="button">Mark Returned</button>
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true">
@@ -112,6 +114,7 @@ export function HireRevertAction({
 
   return (
     <>
+      {pending && <LoadingOverlay />}
       <button className="btn-secondary whitespace-nowrap px-3 py-2 text-xs" onClick={() => setOpen(true)} type="button">Revert to Hired</button>
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true">

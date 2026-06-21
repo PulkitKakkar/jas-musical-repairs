@@ -6,8 +6,11 @@ type ReminderHire = {
   id: string;
   hire_number: string;
   instrument: string;
+  hire_date: string;
   return_due_date: string;
+  hire_total: number;
   late_return_daily_charge: number;
+  security_deposit: number;
   customers: {
     full_name: string;
     phone_number: string;
@@ -33,16 +36,19 @@ async function sendHireReturnReminders(request: Request) {
   }
 
   const supabase = createAdminClient();
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setHours(23, 59, 59, 999);
 
   const { data, error } = await supabase
     .from("hires")
-    .select("id, hire_number, instrument, return_due_date, late_return_daily_charge, customers(full_name, phone_number)")
+    .select("id, hire_number, instrument, hire_date, return_due_date, hire_total, late_return_daily_charge, security_deposit, customers(full_name, phone_number)")
     .eq("status", "HIRED")
     .is("returned_date", null)
     .is("return_reminder_sent_at", null)
-    .lte("return_due_date", today.toISOString())
+    .gte("return_due_date", todayStart.toISOString())
+    .lte("return_due_date", todayEnd.toISOString())
     .limit(50);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -58,7 +64,15 @@ async function sendHireReturnReminders(request: Request) {
     try {
       await sendSms(
         customer.phone_number,
-        hireReturnReminderMessage(customer.full_name, hire.instrument, hire.return_due_date, Number(hire.late_return_daily_charge)),
+        hireReturnReminderMessage({
+          customerName: customer.full_name,
+          instrument: hire.instrument,
+          hireDate: hire.hire_date,
+          returnDueDate: hire.return_due_date,
+          hireTotal: Number(hire.hire_total),
+          lateReturnDailyCharge: Number(hire.late_return_daily_charge),
+          securityDeposit: Number(hire.security_deposit),
+        }),
       );
       const { error: updateError } = await supabase
         .from("hires")

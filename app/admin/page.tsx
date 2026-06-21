@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Music, Plus, Search, Wrench } from "lucide-react";
-import { HireReturnAction, HireRevertAction } from "@/components/hire-return-action";
+import { HireAdminActions } from "@/components/hire-admin-actions";
 import { HireStatusBadge } from "@/components/hire-status-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { StatusActions } from "@/components/status-actions";
@@ -23,26 +23,26 @@ export default async function AdminHome({
     const [{ data: repairData }, { data: hireData }] = await Promise.all([
       supabase
       .from("repairs")
-      .select("*, customers(*)")
+      .select("id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
       .order("received_date", { ascending: false })
         .limit(50),
       supabase
         .from("hires")
-        .select("*, customers(*)")
+        .select("id, hire_number, customer_id, instrument, hire_date, return_due_date, returned_date, hire_duration_days, hire_cost, hire_vat, hire_total, late_return_daily_charge, security_deposit, payment_method, card_processing_fee, extra_charge, return_amount, status, hire_sms_sent_at, return_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
         .order("hire_date", { ascending: false })
         .limit(50),
     ]);
 
     const query = q.trim().toLowerCase();
     const normalizedPhoneQuery = tryNormalizeUkPhone(q);
-    repairs = ((repairData ?? []) as Repair[]).filter(
+    repairs = ((repairData ?? []) as unknown as Repair[]).filter(
       (repair) =>
         repair.repair_number.toLowerCase().includes(query) ||
         repair.instrument.toLowerCase().includes(query) ||
         repair.customers?.full_name.toLowerCase().includes(query) ||
         repair.customers?.phone_number.includes(normalizedPhoneQuery ?? query),
     );
-    hires = ((hireData ?? []) as Hire[]).filter(
+    hires = ((hireData ?? []) as unknown as Hire[]).filter(
       (hire) =>
         hire.hire_number.toLowerCase().includes(query) ||
         hire.instrument.toLowerCase().includes(query) ||
@@ -217,23 +217,7 @@ export default async function AdminHome({
                 </Link>
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   <HireStatusBadge status={hire.status} />
-                  {hire.status === "HIRED" ? (
-                    <HireReturnAction
-                      customerName={hire.customers?.full_name ?? "Unknown customer"}
-                      hireCost={Number(hire.hire_cost)}
-                      hireId={hire.id}
-                      initialExtraCharge={Number(hire.extra_charge)}
-                      instrument={hire.instrument}
-                      paymentMethod={hire.payment_method}
-                      securityDeposit={Number(hire.security_deposit)}
-                    />
-                  ) : (
-                    <HireRevertAction
-                      customerName={hire.customers?.full_name ?? "Unknown customer"}
-                      hireId={hire.id}
-                      instrument={hire.instrument}
-                    />
-                  )}
+                  <HireAdminActions hire={hire} />
                   <Link
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:underline"
                     href="/admin/hires"

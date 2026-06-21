@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { revertStatusAction, updateStatusAction } from "@/app/actions";
+import { LoadingOverlay } from "@/components/loading-overlay";
 import type { RepairStatus } from "@/lib/types";
 import { todayInputValue } from "@/lib/utils";
 
@@ -71,6 +72,7 @@ export function StatusActions({
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
+      {pending && <LoadingOverlay />}
       {nextStatus && <button className={className} onClick={() => openForward(nextStatus)} type="button">{buttonLabel}</button>}
       {canCancel && <button className="whitespace-nowrap border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100" onClick={() => openForward("CANCELLED")} type="button">Cancel Repair</button>}
       {previousStatus && <button className="btn-secondary whitespace-nowrap px-3 py-2 text-xs" onClick={() => openRollback(previousStatus)} type="button">Revert to {previousStatus === "DONE" ? "Done" : "Received"}</button>}

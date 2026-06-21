@@ -14,6 +14,7 @@ export function SearchAutocomplete({
   placeholder,
   scope,
   className = "input",
+  wrapperClassName = "relative min-w-0 flex-1",
   required = false,
   submitOnSelect = false,
 }: {
@@ -22,6 +23,7 @@ export function SearchAutocomplete({
   placeholder: string;
   scope: "repairs" | "customers" | "instruments" | "hires";
   className?: string;
+  wrapperClassName?: string;
   required?: boolean;
   submitOnSelect?: boolean;
 }) {
@@ -59,7 +61,7 @@ export function SearchAutocomplete({
   }
 
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className={wrapperClassName}>
       <input
         autoComplete="off"
         className={className}

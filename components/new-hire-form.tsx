@@ -98,7 +98,7 @@ export function NewHireForm() {
         <Amount label="Return amount" value={amounts.returnAmount} strong />
       </div>
       <div className="sm:col-span-2"><label className="label">Internal notes</label><input className="input" name="notes" /></div>
-      <div className="sm:col-span-2 flex justify-end"><SubmitButton>Create hire & send SMS</SubmitButton></div>
+      <div className="sm:col-span-2 flex justify-end"><SubmitButton>Create hire for review</SubmitButton></div>
     </form>
   );
 }

@@ -210,7 +210,7 @@ export async function createHireAction(formData: FormData) {
     customerId = data.id;
   }
 
-  const { data: hire, error } = await supabase
+  const { error } = await supabase
     .from("hires")
     .insert({
       customer_id: customerId,
@@ -224,30 +224,88 @@ export async function createHireAction(formData: FormData) {
       extra_charge: values.extraCharge,
       notes: values.notes || null,
     })
-    .select("id, hire_number, hire_date, return_due_date, hire_cost, late_return_daily_charge, security_deposit")
+    .select("id")
     .single();
   if (error) return { error: error.message };
 
+  revalidatePath("/admin/hires");
+  redirect("/admin/hires?created=1");
+}
+
+export async function updateHireAction(hireId: string, formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = hireSchema.omit({
+    customerName: true,
+    phoneNumber: true,
+    phoneCountryCode: true,
+    email: true,
+  }).safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid hire details" };
+  }
+  const values = parsed.data;
+  if (values.returnDueDate < values.hireDate) {
+    return { error: "Return date cannot be before hire date" };
+  }
+
+  const { error } = await supabase
+    .from("hires")
+    .update({
+      instrument: values.instrument,
+      hire_date: `${values.hireDate}T12:00:00.000Z`,
+      return_due_date: `${values.returnDueDate}T12:00:00.000Z`,
+      hire_cost: values.hireCost,
+      late_return_daily_charge: values.lateReturnDailyCharge,
+      security_deposit: values.securityDeposit,
+      payment_method: values.paymentMethod,
+      extra_charge: values.extraCharge,
+      notes: values.notes || null,
+    })
+    .eq("id", hireId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/hires");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function sendHireSmsAction(hireId: string) {
+  const { supabase } = await requireAdmin();
+  const { data: hire, error } = await supabase
+    .from("hires")
+    .select("id, instrument, hire_date, return_due_date, hire_total, late_return_daily_charge, security_deposit, customers(full_name, phone_number)")
+    .eq("id", hireId)
+    .single();
+  if (error) return { error: error.message };
+
+  const customer = Array.isArray(hire.customers) ? hire.customers[0] : hire.customers;
+  if (!customer?.phone_number) return { error: "Customer phone number is missing" };
+
   try {
     await sendSms(
-      phoneNumber,
+      customer.phone_number,
       hireCreatedMessage({
-        customerName: values.customerName,
-        instrument: values.instrument,
+        customerName: customer.full_name,
+        instrument: hire.instrument,
         hireDate: hire.hire_date,
         returnDueDate: hire.return_due_date,
-        hireCost: Number(hire.hire_cost),
+        hireTotal: Number(hire.hire_total),
         lateReturnDailyCharge: Number(hire.late_return_daily_charge),
         securityDeposit: Number(hire.security_deposit),
       }),
     );
-    await supabase.from("hires").update({ hire_sms_sent_at: new Date().toISOString() }).eq("id", hire.id);
+    const { error: updateError } = await supabase
+      .from("hires")
+      .update({ hire_sms_sent_at: new Date().toISOString() })
+      .eq("id", hire.id);
+    if (updateError) return { error: updateError.message };
   } catch (smsError) {
-    console.error("Hire SMS failed", smsError);
+    return { error: smsError instanceof Error ? smsError.message : "Hire SMS failed" };
   }
 
   revalidatePath("/admin/hires");
-  redirect("/admin/hires?created=1");
+  revalidatePath("/admin");
+  return { success: true };
 }
 
 export async function updateStatusAction(repairId: string, status: RepairStatus, eventDate: string) {
