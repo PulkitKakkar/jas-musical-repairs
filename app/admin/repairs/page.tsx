@@ -4,6 +4,7 @@ import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { DeleteRepairButton } from "@/components/delete-repair-button";
 import { PaymentStatusSelect } from "@/components/payment-status-select";
+import { RepairReminderButton } from "@/components/repair-reminder-button";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
@@ -120,7 +121,7 @@ export default async function AllRepairsPage({
               <th className="px-4 py-4">Cancelled</th>
               <th className="px-4 py-4">Repair time</th>
               <th className="px-4 py-4">Total elapsed</th>
-              <th className="px-4 py-4">Next action</th>
+              <th className="px-4 py-4">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/10">
@@ -154,7 +155,7 @@ function RepairRow({ repair }: { repair: Repair }) {
       <td className="px-4 py-4">{formatDate(repair.cancelled_date)}</td>
       <td className="px-4 py-4"><Duration value={repairDays} live={!repairEndDate} /></td>
       <td className="px-4 py-4"><Duration value={totalDays} live={!terminalDate} /></td>
-      <td className="px-4 py-4"><div className="flex flex-col items-end gap-2"><StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /><DeleteRepairButton repairId={repair.id} repairNumber={repair.repair_number} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /></div></td>
+      <td className="px-4 py-4"><div className="flex flex-col items-end gap-2"><StatusActions repairId={repair.id} status={repair.status} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact />{repair.status === "DONE" && !repair.collected_date && <RepairReminderButton repairId={repair.id} repairNumber={repair.repair_number} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} lastSentAt={repair.collection_reminder_sent_at} />}<DeleteRepairButton repairId={repair.id} repairNumber={repair.repair_number} customerName={repair.customers?.full_name ?? "Unknown customer"} instrument={repair.instrument} compact /></div></td>
     </tr>
   );
 }

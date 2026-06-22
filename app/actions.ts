@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { addDays, format } from "date-fns";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { hireCreatedMessage, sendSms, statusMessage } from "@/lib/twilio";
+import { collectionReminderMessage, hireCreatedMessage, sendSms, statusMessage } from "@/lib/twilio";
 import { sendStatusEmail } from "@/lib/email";
 import { normalizePhone, splitName } from "@/lib/utils";
 import type { PaymentStatus, RepairStatus } from "@/lib/types";
@@ -44,6 +45,12 @@ const returnHireSchema = z.object({
   returnedDate: z.string().date(),
   extraCharge: z.coerce.number().min(0).default(0),
 });
+
+function startOfTodayIso() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date.toISOString();
+}
 
 export async function createRepairAction(formData: FormData) {
   const { supabase } = await requireAdmin();
@@ -427,6 +434,47 @@ export async function updatePaymentStatusAction(repairId: string, paymentStatus:
   revalidatePath("/admin/repairs");
   revalidatePath(`/admin/repairs/${repairId}`);
   revalidatePath("/admin/reports");
+  return { success: true };
+}
+
+export async function sendRepairCollectionReminderAction(repairId: string) {
+  const { supabase } = await requireAdmin();
+  const { data: repair, error } = await supabase
+    .from("repairs")
+    .select("id, repair_number, instrument, status, completed_date, collected_date, collection_reminder_sent_at, customers(full_name, phone_number)")
+    .eq("id", repairId)
+    .single();
+  if (error) return { error: error.message };
+  if (repair.status !== "DONE" || repair.collected_date) return { error: "Reminder can only be sent for uncollected DONE repairs" };
+  if (!repair.completed_date) return { error: "Completed date is missing" };
+  if (repair.collection_reminder_sent_at && repair.collection_reminder_sent_at >= startOfTodayIso()) {
+    return { error: "A collection reminder has already been sent today" };
+  }
+
+  const customer = Array.isArray(repair.customers) ? repair.customers[0] : repair.customers;
+  if (!customer?.phone_number) return { error: "Customer phone number is missing" };
+
+  try {
+    await sendSms(
+      customer.phone_number,
+      collectionReminderMessage(
+        customer.full_name,
+        repair.instrument,
+        format(addDays(new Date(repair.completed_date), 15), "dd MMM yyyy"),
+      ),
+    );
+    const { error: updateError } = await supabase
+      .from("repairs")
+      .update({ collection_reminder_sent_at: new Date().toISOString() })
+      .eq("id", repair.id);
+    if (updateError) return { error: updateError.message };
+  } catch (smsError) {
+    return { error: smsError instanceof Error ? smsError.message : "Reminder SMS failed" };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/repairs");
+  revalidatePath(`/admin/repairs/${repairId}`);
   return { success: true };
 }
 

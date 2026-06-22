@@ -11,6 +11,7 @@ type ReminderRepair = {
   repair_number: string;
   instrument: string;
   completed_date: string;
+  collection_reminder_sent_at: string | null;
   customers: {
     full_name: string;
     phone_number: string;
@@ -37,18 +38,20 @@ async function sendCollectionReminders(request: Request) {
 
   const limit = reminderLimit(request);
   const supabase = createAdminClient();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 15);
 
   const { data, error } = await supabase
     .from("repairs")
-    .select("id, repair_number, instrument, completed_date, customers(full_name, phone_number)")
+    .select("id, repair_number, instrument, completed_date, collection_reminder_sent_at, customers(full_name, phone_number)")
     .eq("status", "DONE")
     .is("collected_date", null)
-    .is("collection_reminder_sent_at", null)
     .not("completed_date", "is", null)
     .gte("created_at", REPAIR_REMINDER_START_DATE)
     .lte("completed_date", cutoff.toISOString())
+    .or(`collection_reminder_sent_at.is.null,collection_reminder_sent_at.lt.${todayStart.toISOString()}`)
     .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
