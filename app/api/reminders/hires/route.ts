@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hireReturnReminderMessage, sendSms } from "@/lib/twilio";
 
+const MAX_REMINDERS_PER_RUN = 10;
+
 type ReminderHire = {
   id: string;
   hire_number: string;
@@ -35,6 +37,7 @@ async function sendHireReturnReminders(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const limit = reminderLimit(request);
   const supabase = createAdminClient();
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -49,16 +52,14 @@ async function sendHireReturnReminders(request: Request) {
     .is("return_reminder_sent_at", null)
     .gte("return_due_date", todayStart.toISOString())
     .lte("return_due_date", todayEnd.toISOString())
-    .limit(50);
+    .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const results = [];
-  for (const hire of (data ?? []) as ReminderHire[]) {
+  const results = await Promise.all(((data ?? []) as ReminderHire[]).map(async (hire) => {
     const customer = Array.isArray(hire.customers) ? hire.customers[0] : hire.customers;
     if (!customer?.phone_number || !hire.return_due_date) {
-      results.push({ hireId: hire.id, sent: false, error: "Missing customer phone or return due date" });
-      continue;
+      return { hireId: hire.id, sent: false, error: "Missing customer phone or return due date" };
     }
 
     try {
@@ -79,21 +80,28 @@ async function sendHireReturnReminders(request: Request) {
         .update({ return_reminder_sent_at: new Date().toISOString() })
         .eq("id", hire.id);
       if (updateError) throw updateError;
-      results.push({ hireId: hire.id, hireNumber: hire.hire_number, sent: true });
+      return { hireId: hire.id, hireNumber: hire.hire_number, sent: true };
     } catch (sendError) {
-      results.push({
+      return {
         hireId: hire.id,
         hireNumber: hire.hire_number,
         sent: false,
         error: sendError instanceof Error ? sendError.message : "Reminder failed",
-      });
+      };
     }
-  }
+  }));
 
   return NextResponse.json({
     checkedAt: new Date().toISOString(),
+    limit,
     eligible: data?.length ?? 0,
     sent: results.filter((result) => result.sent).length,
     results,
   });
+}
+
+function reminderLimit(request: Request) {
+  const requested = Number(new URL(request.url).searchParams.get("limit"));
+  if (!Number.isFinite(requested) || requested <= 0) return MAX_REMINDERS_PER_RUN;
+  return Math.min(Math.floor(requested), MAX_REMINDERS_PER_RUN);
 }

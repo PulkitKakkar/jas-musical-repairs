@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { collectionReminderMessage, sendSms } from "@/lib/twilio";
 
+const MAX_REMINDERS_PER_RUN = 10;
+
 type ReminderRepair = {
   id: string;
   repair_number: string;
@@ -32,6 +34,7 @@ async function sendCollectionReminders(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const limit = reminderLimit(request);
   const supabase = createAdminClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 15);
@@ -44,16 +47,14 @@ async function sendCollectionReminders(request: Request) {
     .is("collection_reminder_sent_at", null)
     .not("completed_date", "is", null)
     .lte("completed_date", cutoff.toISOString())
-    .limit(50);
+    .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const results = [];
-  for (const repair of (data ?? []) as ReminderRepair[]) {
+  const results = await Promise.all(((data ?? []) as ReminderRepair[]).map(async (repair) => {
     const customer = Array.isArray(repair.customers) ? repair.customers[0] : repair.customers;
     if (!customer?.phone_number || !repair.completed_date) {
-      results.push({ repairId: repair.id, sent: false, error: "Missing customer phone or completed date" });
-      continue;
+      return { repairId: repair.id, sent: false, error: "Missing customer phone or completed date" };
     }
 
     const deadlineText = format(addDays(new Date(repair.completed_date), 15), "dd MMM yyyy");
@@ -67,21 +68,28 @@ async function sendCollectionReminders(request: Request) {
         .update({ collection_reminder_sent_at: new Date().toISOString() })
         .eq("id", repair.id);
       if (updateError) throw updateError;
-      results.push({ repairId: repair.id, repairNumber: repair.repair_number, sent: true });
+      return { repairId: repair.id, repairNumber: repair.repair_number, sent: true };
     } catch (sendError) {
-      results.push({
+      return {
         repairId: repair.id,
         repairNumber: repair.repair_number,
         sent: false,
         error: sendError instanceof Error ? sendError.message : "Reminder failed",
-      });
+      };
     }
-  }
+  }));
 
   return NextResponse.json({
     checkedAt: new Date().toISOString(),
+    limit,
     eligible: data?.length ?? 0,
     sent: results.filter((result) => result.sent).length,
     results,
   });
+}
+
+function reminderLimit(request: Request) {
+  const requested = Number(new URL(request.url).searchParams.get("limit"));
+  if (!Number.isFinite(requested) || requested <= 0) return MAX_REMINDERS_PER_RUN;
+  return Math.min(Math.floor(requested), MAX_REMINDERS_PER_RUN);
 }

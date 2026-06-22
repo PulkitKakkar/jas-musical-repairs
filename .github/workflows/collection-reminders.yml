@@ -14,10 +14,10 @@ jobs:
           curl --fail --show-error --silent \
             --request POST \
             --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://main.d3nbquzzxxolms.amplifyapp.com/api/reminders/collection
+            https://main.d3nbquzzxxolms.amplifyapp.com/api/reminders/collection?limit=10
       - name: Trigger hire return reminders
         run: |
           curl --fail --show-error --silent \
             --request POST \
             --header "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://main.d3nbquzzxxolms.amplifyapp.com/api/reminders/hires
+            https://main.d3nbquzzxxolms.amplifyapp.com/api/reminders/hires?limit=10
