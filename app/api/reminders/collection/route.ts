@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { collectionReminderMessage, sendSms } from "@/lib/twilio";
 
 const MAX_REMINDERS_PER_RUN = 10;
+const REPAIR_REMINDER_START_DATE = "2026-06-23T00:00:00.000Z";
 
 type ReminderRepair = {
   id: string;
@@ -46,6 +47,7 @@ async function sendCollectionReminders(request: Request) {
     .is("collected_date", null)
     .is("collection_reminder_sent_at", null)
     .not("completed_date", "is", null)
+    .gte("created_at", REPAIR_REMINDER_START_DATE)
     .lte("completed_date", cutoff.toISOString())
     .limit(limit);
 
@@ -81,6 +83,7 @@ async function sendCollectionReminders(request: Request) {
 
   return NextResponse.json({
     checkedAt: new Date().toISOString(),
+    reminderStartDate: REPAIR_REMINDER_START_DATE,
     limit,
     eligible: data?.length ?? 0,
     sent: results.filter((result) => result.sent).length,
