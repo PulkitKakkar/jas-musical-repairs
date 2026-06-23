@@ -1,6 +1,8 @@
 alter table public.repairs
 add column if not exists payment_status text not null default 'UNPAID'
   check (payment_status in ('UNPAID', 'PARTIAL', 'PAID')),
+add column if not exists payment_amount numeric(10,2) not null default 0
+  check (payment_amount >= 0),
 add column if not exists alternate_phone_number text
   check (alternate_phone_number is null or alternate_phone_number = public.normalize_uk_phone(alternate_phone_number));
 

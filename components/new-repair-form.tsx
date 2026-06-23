@@ -15,6 +15,7 @@ export function NewRepairForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("UNPAID");
   const [found, setFound] = useState(false);
   const [activeLookup, setActiveLookup] = useState<"name" | "phone" | null>(null);
   const [suggestions, setSuggestions] = useState<CustomerSuggestion[]>([]);
@@ -60,7 +61,8 @@ export function NewRepairForm() {
       <div><label className="label">Instrument</label><input className="input" name="instrument" required /></div>
       <div className="sm:col-span-2"><label className="label">Issue description</label><textarea className="input min-h-28" name="issueDescription" required /></div>
       <div><label className="label">Amount (£)</label><input className="input" name="amount" type="number" min="0" step="0.01" required /></div>
-      <div><label className="label">Payment status</label><select className="input" name="paymentStatus" defaultValue="UNPAID"><option value="UNPAID">Unpaid</option><option value="PARTIAL">Partial</option><option value="PAID">Paid</option></select></div>
+      <div><label className="label">Payment status</label><select className="input" name="paymentStatus" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}><option value="UNPAID">Unpaid</option><option value="PARTIAL">Partial</option><option value="PAID">Paid</option></select></div>
+      {paymentStatus === "PARTIAL" && <div><label className="label">Amount paid (£)</label><input className="input" name="paymentAmount" type="number" min="0" step="0.01" required /></div>}
       <div><label className="label">Intake date</label><input className="input" name="receivedDate" type="date" defaultValue={todayInputValue()} max={todayInputValue()} required /></div>
       <div className="sm:col-span-2"><label className="label">Internal notes</label><input className="input" name="notes" /></div>
       <div className="sm:col-span-2 flex justify-end"><SubmitButton>Create repair & notify customer</SubmitButton></div>

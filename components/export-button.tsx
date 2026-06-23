@@ -9,14 +9,14 @@ export function ExportButton({ repairs }: { repairs: Repair[] }) {
       "Repair Number": r.repair_number, "Customer Name": r.customers?.full_name,
       "Phone Number": r.customers?.phone_number, "Alternate Phone Number": r.alternate_phone_number,
       Email: r.customers?.email, Instrument: r.instrument, Issue: r.issue_description,
-      Amount: r.amount, "Payment Status": r.payment_status,
+      Amount: r.amount, "Payment Status": r.payment_status, "Paid Amount": r.payment_amount, Balance: Math.max(0, Number(r.amount) - Number(r.payment_amount ?? 0)),
       Status: r.status, "Received Date": r.received_date,
       "Completed Date": r.completed_date, "Collected Date": r.collected_date,
       "Cancelled Date": r.cancelled_date,
     }));
     const headers = Object.keys(rows[0] ?? {
       "Repair Number": "", "Customer Name": "", "Phone Number": "", "Alternate Phone Number": "",
-      Email: "", Instrument: "", Issue: "", Amount: "", "Payment Status": "", Status: "", "Received Date": "",
+      Email: "", Instrument: "", Issue: "", Amount: "", "Payment Status": "", "Paid Amount": "", Balance: "", Status: "", "Received Date": "",
       "Completed Date": "", "Collected Date": "",
       "Cancelled Date": "",
     });

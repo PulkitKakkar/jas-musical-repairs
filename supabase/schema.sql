@@ -85,6 +85,7 @@ create table public.repairs (
   amount numeric(10,2) not null default 0 check (amount >= 0),
   payment_status text not null default 'UNPAID'
     check (payment_status in ('UNPAID', 'PARTIAL', 'PAID')),
+  payment_amount numeric(10,2) not null default 0 check (payment_amount >= 0),
   alternate_phone_number text
     check (alternate_phone_number is null or alternate_phone_number ~ '^\+[1-9][0-9]{7,14}$'),
   status public.repair_status not null default 'RECEIVED',

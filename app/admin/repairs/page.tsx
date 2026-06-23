@@ -30,7 +30,7 @@ export default async function AllRepairsPage({
   const { supabase } = await requireAdmin();
   let query = supabase
     .from("repairs")
-    .select("id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
+    .select("id, repair_number, customer_id, instrument, issue_description, amount, payment_status, payment_amount, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
     .order("received_date", { ascending: false });
 
   if (filters.status && ["RECEIVED", "DONE", "COLLECTED", "CANCELLED"].includes(filters.status)) {
@@ -148,7 +148,7 @@ function RepairRow({ repair }: { repair: Repair }) {
       <td className="px-4 py-4 whitespace-nowrap">{repair.customers?.phone_number}</td>
       <td className="px-4 py-4 whitespace-nowrap">{repair.alternate_phone_number ?? "—"}</td>
       <td className="px-4 py-4"><StatusBadge status={repair.status as RepairStatus} /></td>
-      <td className="px-4 py-4"><PaymentStatusSelect repairId={repair.id} initialStatus={repair.payment_status ?? "UNPAID"} compact /></td>
+      <td className="px-4 py-4"><PaymentStatusSelect repairId={repair.id} initialStatus={repair.payment_status ?? "UNPAID"} initialPaymentAmount={Number(repair.payment_amount ?? 0)} compact /></td>
       <td className="px-4 py-4">{formatDate(repair.received_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.completed_date)}</td>
       <td className="px-4 py-4">{formatDate(repair.collected_date)}</td>

@@ -6,6 +6,7 @@ import { DeleteRepairButton } from "@/components/delete-repair-button";
 import { StatusActions } from "@/components/status-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { PaymentStatusSelect } from "@/components/payment-status-select";
+import { RepairEditButton } from "@/components/repair-edit-button";
 import { requireAdmin } from "@/lib/auth";
 import type { AuditLog, Repair } from "@/lib/types";
 import { durationDays, formatDate, formatDuration, formatMoney } from "@/lib/utils";
@@ -28,7 +29,7 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
   ] as const;
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex flex-wrap items-center justify-end gap-3"><StatusBadge status={item.status} /><StatusActions repairId={item.id} status={item.status} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /><DeleteRepairButton repairId={item.id} repairNumber={item.repair_number} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /></div></div>
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-brand-600">{item.repair_number}</p><h1 className="text-3xl font-black">{item.instrument}</h1></div><div className="flex flex-wrap items-center justify-end gap-3"><StatusBadge status={item.status} /><RepairEditButton repair={item} /><StatusActions repairId={item.id} status={item.status} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /><DeleteRepairButton repairId={item.id} repairNumber={item.repair_number} customerName={item.customers?.full_name ?? "Unknown customer"} instrument={item.instrument} /></div></div>
       <div className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
         <section className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 print:hidden">
@@ -36,7 +37,7 @@ export default async function RepairDetails({ params }: { params: Promise<{ id: 
             <TimeCard label="Total elapsed time" days={durationDays(item.received_date, item.collected_date ?? item.cancelled_date)} live={!item.collected_date && !item.cancelled_date} />
           </div>
           <div className="card p-6 print:shadow-none"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-ink/40">JAS Musicals repair receipt</p><h2 className="mt-1 text-2xl font-black">{item.repair_number}</h2></div><StatusBadge status={item.status} /></div>
-            <dl className="grid gap-5 text-sm sm:grid-cols-2"><Detail label="Customer" value={item.customers?.full_name} /><Detail label="Phone" value={item.customers?.phone_number} /><Detail label="Alternate phone" value={item.alternate_phone_number ?? "—"} /><Detail label="Email" value={item.customers?.email ?? "—"} /><Detail label="Instrument" value={item.instrument} /><Detail label="Issue" value={item.issue_description} /><Detail label="Amount" value={formatMoney(item.amount)} /><div><dt className="text-xs font-bold uppercase tracking-wider text-ink/40">Payment</dt><dd className="mt-1"><PaymentStatusSelect repairId={item.id} initialStatus={item.payment_status ?? "UNPAID"} /></dd></div></dl>
+            <dl className="grid gap-5 text-sm sm:grid-cols-2"><Detail label="Customer" value={item.customers?.full_name} /><Detail label="Phone" value={item.customers?.phone_number} /><Detail label="Alternate phone" value={item.alternate_phone_number ?? "—"} /><Detail label="Email" value={item.customers?.email ?? "—"} /><Detail label="Instrument" value={item.instrument} /><Detail label="Issue" value={item.issue_description} /><Detail label="Amount" value={formatMoney(item.amount)} /><Detail label="Paid amount" value={formatMoney(item.payment_amount ?? 0)} /><Detail label="Balance" value={formatMoney(Math.max(0, Number(item.amount) - Number(item.payment_amount ?? 0)))} /><div><dt className="text-xs font-bold uppercase tracking-wider text-ink/40">Payment</dt><dd className="mt-1"><PaymentStatusSelect repairId={item.id} initialStatus={item.payment_status ?? "UNPAID"} initialPaymentAmount={Number(item.payment_amount ?? 0)} /></dd></div></dl>
             <div className="mt-7"><ReceiptActions /></div>
           </div>
           <div className="card p-6 print:hidden"><h2 className="mb-4 font-bold">Internal notes</h2><NotesForm repairId={item.id} initialNotes={item.notes ?? ""} /></div>

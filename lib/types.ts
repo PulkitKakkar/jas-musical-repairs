@@ -21,6 +21,7 @@ export type Repair = {
   issue_description: string;
   amount: number;
   payment_status: PaymentStatus;
+  payment_amount: number;
   alternate_phone_number: string | null;
   status: RepairStatus;
   received_date: string;

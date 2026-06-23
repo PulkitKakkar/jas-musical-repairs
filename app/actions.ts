@@ -19,10 +19,22 @@ const repairSchema = z.object({
   issueDescription: z.string().trim().min(3),
   amount: z.coerce.number().min(0),
   paymentStatus: z.enum(["UNPAID", "PARTIAL", "PAID"]).default("UNPAID"),
+  paymentAmount: z.coerce.number().min(0).optional(),
   alternatePhoneNumber: z.string().trim().optional(),
   alternatePhoneCountryCode: z.string().trim().default("+44"),
   receivedDate: z.string().date(),
   notes: z.string().trim().optional(),
+});
+
+const repairEditSchema = z.object({
+  instrument: z.string().trim().min(2),
+  issueDescription: z.string().trim().min(3),
+  amount: z.coerce.number().min(0),
+  paymentStatus: z.enum(["UNPAID", "PARTIAL", "PAID"]).default("UNPAID"),
+  paymentAmount: z.coerce.number().min(0).default(0),
+  alternatePhoneNumber: z.string().trim().optional(),
+  alternatePhoneCountryCode: z.string().trim().default("+44"),
+  receivedDate: z.string().date(),
 });
 
 const hireSchema = z.object({
@@ -50,6 +62,12 @@ function startOfTodayIso() {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
   return date.toISOString();
+}
+
+function paymentAmountForStatus(status: PaymentStatus, amount: number, paymentAmount?: number) {
+  if (status === "PAID") return amount;
+  if (status === "PARTIAL") return paymentAmount ?? 0;
+  return 0;
 }
 
 export async function createRepairAction(formData: FormData) {
@@ -112,6 +130,7 @@ export async function createRepairAction(formData: FormData) {
     issue_description: values.issueDescription,
     amount: values.amount,
     payment_status: values.paymentStatus,
+    payment_amount: paymentAmountForStatus(values.paymentStatus, values.amount, values.paymentAmount),
     alternate_phone_number: alternatePhoneNumber,
     received_date: receivedTimestamp,
     notes: values.notes || null,
@@ -129,6 +148,7 @@ export async function createRepairAction(formData: FormData) {
         instrument: repairPayload.instrument,
         issue_description: repairPayload.issue_description,
         amount: repairPayload.amount,
+        payment_amount: repairPayload.payment_amount,
         received_date: repairPayload.received_date,
         notes: repairPayload.notes,
       })
@@ -164,6 +184,55 @@ export async function createRepairAction(formData: FormData) {
 
   revalidatePath("/admin");
   redirect(`/admin/repairs/${repair.id}?created=1`);
+}
+
+export async function updateRepairDetailsAction(repairId: string, formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const parsed = repairEditSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid repair details" };
+  }
+  const values = parsed.data;
+  let alternatePhoneNumber: string | null = null;
+  try {
+    alternatePhoneNumber = values.alternatePhoneNumber ? normalizePhone(values.alternatePhoneNumber, values.alternatePhoneCountryCode) : null;
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Invalid alternate phone number" };
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  if (values.receivedDate > today) return { error: "Intake date cannot be in the future" };
+
+  const { data: repair, error: readError } = await supabase
+    .from("repairs")
+    .select("completed_date, collected_date, cancelled_date")
+    .eq("id", repairId)
+    .single();
+  if (readError) return { error: readError.message };
+  for (const date of [repair.completed_date, repair.collected_date, repair.cancelled_date]) {
+    if (date && values.receivedDate > date.slice(0, 10)) {
+      return { error: "Intake date cannot be after an existing status date" };
+    }
+  }
+
+  const { error } = await supabase
+    .from("repairs")
+    .update({
+      instrument: values.instrument,
+      issue_description: values.issueDescription,
+      amount: values.amount,
+      payment_status: values.paymentStatus,
+      payment_amount: paymentAmountForStatus(values.paymentStatus, values.amount, values.paymentAmount),
+      alternate_phone_number: alternatePhoneNumber,
+      received_date: `${values.receivedDate}T12:00:00.000Z`,
+    })
+    .eq("id", repairId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/repairs");
+  revalidatePath(`/admin/repairs/${repairId}`);
+  revalidatePath("/admin/reports");
+  return { success: true };
 }
 
 export async function createHireAction(formData: FormData) {
@@ -422,12 +491,21 @@ export async function updateNotesAction(repairId: string, notes: string) {
   return { success: true };
 }
 
-export async function updatePaymentStatusAction(repairId: string, paymentStatus: PaymentStatus) {
+export async function updatePaymentStatusAction(repairId: string, paymentStatus: PaymentStatus, paymentAmount?: number) {
   const { supabase } = await requireAdmin();
   if (!["UNPAID", "PARTIAL", "PAID"].includes(paymentStatus)) return { error: "Invalid payment status" };
+  const { data: repair, error: readError } = await supabase
+    .from("repairs")
+    .select("amount")
+    .eq("id", repairId)
+    .single();
+  if (readError) return { error: readError.message };
   const { error } = await supabase
     .from("repairs")
-    .update({ payment_status: paymentStatus })
+    .update({
+      payment_status: paymentStatus,
+      payment_amount: paymentAmountForStatus(paymentStatus, Number(repair.amount), paymentAmount),
+    })
     .eq("id", repairId);
   if (error) return { error: error.message };
   revalidatePath("/admin");
