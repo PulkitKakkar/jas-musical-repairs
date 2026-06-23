@@ -12,6 +12,8 @@ import { durationDays, formatDate, formatDuration } from "@/lib/utils";
 import { tryNormalizeUkPhone } from "@/lib/utils";
 
 const TABLE_LIMIT = 150;
+const repairSelectWithPaymentAmount = "id, repair_number, customer_id, instrument, issue_description, amount, payment_status, payment_amount, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)";
+const repairSelectFallback = "id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)";
 
 type Filters = {
   status?: string;
@@ -30,7 +32,7 @@ export default async function AllRepairsPage({
   const { supabase } = await requireAdmin();
   let query = supabase
     .from("repairs")
-    .select("id, repair_number, customer_id, instrument, issue_description, amount, payment_status, payment_amount, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
+    .select(repairSelectWithPaymentAmount)
     .order("received_date", { ascending: false });
 
   if (filters.status && ["RECEIVED", "DONE", "COLLECTED", "CANCELLED"].includes(filters.status)) {
@@ -39,7 +41,21 @@ export default async function AllRepairsPage({
   if (filters.from) query = query.gte("received_date", `${filters.from}T00:00:00.000Z`);
   if (filters.to) query = query.lte("received_date", `${filters.to}T23:59:59.999Z`);
 
-  const { data } = await query;
+  let { data, error } = await query;
+  if (error && error.message.includes("payment_amount")) {
+    let fallbackQuery = supabase
+      .from("repairs")
+      .select(repairSelectFallback)
+      .order("received_date", { ascending: false });
+    if (filters.status && ["RECEIVED", "DONE", "COLLECTED", "CANCELLED"].includes(filters.status)) {
+      fallbackQuery = fallbackQuery.eq("status", filters.status);
+    }
+    if (filters.from) fallbackQuery = fallbackQuery.gte("received_date", `${filters.from}T00:00:00.000Z`);
+    if (filters.to) fallbackQuery = fallbackQuery.lte("received_date", `${filters.to}T23:59:59.999Z`);
+    const fallback = await fallbackQuery;
+    data = fallback.data?.map((repair) => ({ ...repair, payment_amount: 0 })) ?? null;
+    error = fallback.error;
+  }
   const normalizedPhoneQuery = filters.q ? tryNormalizeUkPhone(filters.q) : null;
   const textQuery = filters.q?.trim().toLowerCase();
   const repairs = ((data ?? []) as unknown as Repair[]).filter((repair) =>
@@ -73,6 +89,7 @@ export default async function AllRepairsPage({
         <span>Received</span><span>→</span><span>Done</span><span>→</span><span>Collected</span><span className="ml-2 text-red-700">or Cancelled</span>
         <span className="ml-2 normal-case tracking-normal text-ink/40">Every change requires a date and confirmation.</span>
       </div>
+      {error && <p className="mb-6 border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error.message}</p>}
 
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <Metric label="Filtered entries" value={String(repairs.length)} />
