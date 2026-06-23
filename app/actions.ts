@@ -566,6 +566,26 @@ export async function loginAction(formData: FormData) {
   redirect("/admin");
 }
 
+export async function reportLoginAction(formData: FormData) {
+  const { supabase } = await requireUnauthenticatedClient();
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
+  await supabase.auth.signOut();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) redirect(`/reports-login?error=${encodeURIComponent(error.message)}`);
+
+  const allowedEmails = (process.env.REPORT_MASTER_EMAILS ?? "")
+    .split(",")
+    .map((allowedEmail) => allowedEmail.trim().toLowerCase())
+    .filter(Boolean);
+  if (!data.user.email || !allowedEmails.includes(data.user.email.toLowerCase())) {
+    await supabase.auth.signOut();
+    redirect("/reports-login?error=This account is not allowed to view reports");
+  }
+
+  redirect("/admin/reports");
+}
+
 async function requireUnauthenticatedClient() {
   const { createClient } = await import("@/lib/supabase/server");
   return { supabase: await createClient() };

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ExportButton } from "@/components/export-button";
 import { StatusBadge } from "@/components/status-badge";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
-import { requireAdmin } from "@/lib/auth";
+import { requireReportsMaster } from "@/lib/auth";
 import type { Repair } from "@/lib/types";
 import { formatDate, formatMoney } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ const dateFields: Record<DateField, string> = {
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<Filters> }) {
   const filters = await searchParams;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireReportsMaster();
   const { data } = await supabase
     .from("repairs")
     .select("*, customers(*)")
