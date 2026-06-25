@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#07140f"/>
+  <ellipse cx="32" cy="29" rx="23" ry="16" fill="none" stroke="#f7f2e8" stroke-width="4"/>
+  <text x="32" y="36" text-anchor="middle" font-family="Georgia, serif" font-size="20" font-weight="700" fill="#f7f2e8">JAS</text>
+  <circle cx="48" cy="48" r="5" fill="#b8872d"/>
+</svg>
