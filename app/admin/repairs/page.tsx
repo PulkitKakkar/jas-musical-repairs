@@ -6,6 +6,7 @@ import { DeleteRepairButton } from "@/components/delete-repair-button";
 import { PaymentStatusSelect } from "@/components/payment-status-select";
 import { RepairReminderButton } from "@/components/repair-reminder-button";
 import { SearchAutocomplete } from "@/components/search-autocomplete";
+import { HorizontalTableScroll } from "@/components/horizontal-table-scroll";
 import { requireAdmin } from "@/lib/auth";
 import type { Repair, RepairStatus } from "@/lib/types";
 import { durationDays, formatDate, formatDuration } from "@/lib/utils";
@@ -117,8 +118,8 @@ export default async function AllRepairsPage({
         <div className="flex gap-2"><button className="btn-primary flex-1">Apply filters</button><Link className="btn-secondary" href="/admin/repairs">Clear</Link></div>
       </form>
 
-      <section className="card table-scroll">
-        <p className="table-scroll-hint">Scroll sideways to see all repair columns</p>
+      <section className="card overflow-hidden">
+        <HorizontalTableScroll label="Scroll sideways to see all repair columns">
         {repairs.length > visibleRepairs.length && (
           <p className="border-b px-4 py-3 text-xs font-medium text-ink/50">
             Showing first {visibleRepairs.length} of {repairs.length} filtered repairs. Use search or filters to narrow the list.
@@ -149,6 +150,7 @@ export default async function AllRepairsPage({
           </tbody>
         </table>
         {!repairs.length && <p className="p-10 text-center text-sm text-ink/50">No repairs match these filters.</p>}
+        </HorizontalTableScroll>
       </section>
     </div>
   );

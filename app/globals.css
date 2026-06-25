@@ -51,4 +51,46 @@ body {
   .table-scroll-hint {
     @apply border-b border-black/10 bg-cream px-4 py-2 text-xs font-bold uppercase tracking-wider text-ink/45;
   }
+  .horizontal-scroll-control {
+    @apply flex items-center gap-3 border-b border-black/10 bg-cream px-4 py-3;
+  }
+  .horizontal-scroll-button {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/15 bg-white text-ink shadow-sm transition hover:border-brand-600 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-35;
+  }
+  .horizontal-scroll-range {
+    @apply block h-5 w-full cursor-pointer bg-transparent disabled:cursor-not-allowed disabled:opacity-40;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .horizontal-scroll-range::-webkit-slider-runnable-track {
+    height: 14px;
+    border: 1px solid rgb(0 0 0 / 0.14);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fffaf0 0%, #f0e4cf 100%);
+  }
+  .horizontal-scroll-range::-webkit-slider-thumb {
+    width: 72px;
+    height: 24px;
+    margin-top: -6px;
+    border: 3px solid #b8872d;
+    border-radius: 999px;
+    background: #07140f;
+    box-shadow: 0 4px 12px rgb(7 20 15 / 0.25);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .horizontal-scroll-range::-moz-range-track {
+    height: 14px;
+    border: 1px solid rgb(0 0 0 / 0.14);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fffaf0 0%, #f0e4cf 100%);
+  }
+  .horizontal-scroll-range::-moz-range-thumb {
+    width: 72px;
+    height: 24px;
+    border: 3px solid #b8872d;
+    border-radius: 999px;
+    background: #07140f;
+    box-shadow: 0 4px 12px rgb(7 20 15 / 0.25);
+  }
 }
