@@ -91,7 +91,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Breakdown title="By status" rows={statusTotals} />
       </section>
 
-      <section className="card overflow-x-auto">
+      <section className="card table-scroll">
         <table className="w-full min-w-[1050px] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wider text-ink/40"><tr><th className="px-4 py-4">Repair</th><th className="px-4 py-4">Customer</th><th className="px-4 py-4">Instrument</th><th className="px-4 py-4">Status</th><th className="px-4 py-4">{dateFields[dateField]}</th><th className="px-4 py-4 text-right">Amount</th></tr></thead>
           <tbody className="divide-y divide-black/10">

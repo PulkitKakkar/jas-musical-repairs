@@ -117,7 +117,8 @@ export default async function AllRepairsPage({
         <div className="flex gap-2"><button className="btn-primary flex-1">Apply filters</button><Link className="btn-secondary" href="/admin/repairs">Clear</Link></div>
       </form>
 
-      <section className="card overflow-x-auto">
+      <section className="card table-scroll">
+        <p className="table-scroll-hint">Scroll sideways to see all repair columns</p>
         {repairs.length > visibleRepairs.length && (
           <p className="border-b px-4 py-3 text-xs font-medium text-ink/50">
             Showing first {visibleRepairs.length} of {repairs.length} filtered repairs. Use search or filters to narrow the list.

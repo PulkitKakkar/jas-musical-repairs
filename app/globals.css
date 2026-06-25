@@ -31,4 +31,24 @@ body {
   .eyebrow {
     @apply text-xs font-bold uppercase tracking-[0.2em] text-brand-600;
   }
+  .table-scroll {
+    @apply overflow-x-auto;
+    scrollbar-color: #07140f #f7f2e8;
+    scrollbar-width: auto;
+  }
+  .table-scroll::-webkit-scrollbar {
+    height: 16px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: #f7f2e8;
+    border-top: 1px solid rgb(0 0 0 / 0.1);
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: #07140f;
+    border: 3px solid #f7f2e8;
+    border-radius: 999px;
+  }
+  .table-scroll-hint {
+    @apply border-b border-black/10 bg-cream px-4 py-2 text-xs font-bold uppercase tracking-wider text-ink/45;
+  }
 }

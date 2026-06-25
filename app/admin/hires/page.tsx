@@ -89,7 +89,7 @@ export default async function HiresPage({
         <div className="flex gap-2"><button className="btn-primary flex-1">Apply filters</button><Link className="btn-secondary" href="/admin/hires">Clear</Link></div>
       </form>
 
-      <section className="card overflow-x-auto">
+      <section className="card table-scroll">
         {hires.length > visibleHires.length && (
           <p className="border-b px-4 py-3 text-xs font-medium text-ink/50">
             Showing first {visibleHires.length} of {hires.length} filtered hires. Use search or filters to narrow the list.
