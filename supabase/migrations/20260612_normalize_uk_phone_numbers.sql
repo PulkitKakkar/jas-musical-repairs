@@ -6,14 +6,28 @@ strict
 set search_path = public
 as $$
 declare
+  trimmed text := trim(input_phone);
   digits text := regexp_replace(trim(input_phone), '\D', '', 'g');
 begin
+  if trimmed = '' then
+    raise exception 'Phone number is required';
+  end if;
+
   if digits like '0044%' then
     digits := substring(digits from 5);
   elsif digits like '44%' then
     digits := substring(digits from 3);
-  elsif trim(input_phone) like '+%' or digits like '00%' then
-    raise exception 'Phone number must be a UK number';
+  elsif trimmed like '+%' then
+    if digits !~ '^[1-9][0-9]{7,14}$' then
+      raise exception 'Invalid phone number';
+    end if;
+    return '+' || digits;
+  elsif digits like '00%' then
+    digits := substring(digits from 3);
+    if digits !~ '^[1-9][0-9]{7,14}$' then
+      raise exception 'Invalid phone number';
+    end if;
+    return '+' || digits;
   elsif digits like '0%' then
     digits := substring(digits from 2);
   end if;
