@@ -74,3 +74,8 @@ drop constraint if exists customers_phone_number_uk_e164_check;
 alter table public.customers
 add constraint customers_phone_number_uk_e164_check
 check (phone_number = public.normalize_uk_phone(phone_number));
+
+alter type public.repair_status add value if not exists 'CANCELLED';
+
+alter table public.repairs
+add column if not exists cancelled_date timestamptz;
