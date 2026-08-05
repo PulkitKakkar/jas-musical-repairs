@@ -23,7 +23,7 @@ export default async function AdminHome({
     const [{ data: repairData }, { data: hireData }] = await Promise.all([
       supabase
       .from("repairs")
-      .select("id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
+      .select("id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, collection_reminder_count, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)")
       .order("received_date", { ascending: false })
         .limit(50),
       supabase

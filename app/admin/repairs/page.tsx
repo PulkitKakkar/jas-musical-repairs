@@ -13,8 +13,8 @@ import { durationDays, formatDate, formatDuration } from "@/lib/utils";
 import { tryNormalizeUkPhone } from "@/lib/utils";
 
 const TABLE_LIMIT = 150;
-const repairSelectWithPaymentAmount = "id, repair_number, customer_id, instrument, issue_description, amount, payment_status, payment_amount, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)";
-const repairSelectFallback = "id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)";
+const repairSelectWithPaymentAmount = "id, repair_number, customer_id, instrument, issue_description, amount, payment_status, payment_amount, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, collection_reminder_count, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)";
+const repairSelectFallback = "id, repair_number, customer_id, instrument, issue_description, amount, payment_status, alternate_phone_number, status, received_date, completed_date, collected_date, cancelled_date, collection_reminder_sent_at, collection_reminder_count, notes, created_at, updated_at, customers(id, first_name, last_name, full_name, phone_number, email, created_at)";
 
 type Filters = {
   status?: string;

@@ -545,7 +545,9 @@ export async function sendRepairCollectionReminderAction(repairId: string) {
     const { error: updateError } = await supabase
       .from("repairs")
       .update({ collection_reminder_sent_at: new Date().toISOString() })
-      .eq("id", repair.id);
+      .eq("id", repair.id)
+      .eq("status", "DONE")
+      .is("collected_date", null);
     if (updateError) return { error: updateError.message };
   } catch (smsError) {
     return { error: smsError instanceof Error ? smsError.message : "Reminder SMS failed" };

@@ -14,6 +14,7 @@ type ReminderRepair = {
   completed_date: string;
   collected_date: string | null;
   collection_reminder_sent_at: string | null;
+  collection_reminder_count: number;
   customers: {
     full_name: string;
     phone_number: string;
@@ -42,18 +43,21 @@ async function sendCollectionReminders(request: Request) {
   const supabase = createAdminClient();
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 15);
+  const reminderCutoff = new Date();
+  reminderCutoff.setDate(reminderCutoff.getDate() - 15);
 
   const { data, error } = await supabase
     .from("repairs")
-    .select("id, repair_number, instrument, status, completed_date, collected_date, collection_reminder_sent_at, customers(full_name, phone_number)")
+    .select("id, repair_number, instrument, status, completed_date, collected_date, collection_reminder_sent_at, collection_reminder_count, customers(full_name, phone_number)")
     .eq("status", "DONE")
     .is("collected_date", null)
     .not("completed_date", "is", null)
     .gte("created_at", REPAIR_REMINDER_START_DATE)
-    .lte("completed_date", cutoff.toISOString())
-    .or(`collection_reminder_sent_at.is.null,collection_reminder_sent_at.lt.${todayStart.toISOString()}`)
+    .lt("collection_reminder_count", 2)
+    .or([
+      `and(collection_reminder_count.eq.0,completed_date.lte.${reminderCutoff.toISOString()})`,
+      `and(collection_reminder_count.eq.1,collection_reminder_sent_at.lte.${reminderCutoff.toISOString()})`,
+    ].join(","))
     .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -61,7 +65,7 @@ async function sendCollectionReminders(request: Request) {
   const results = await Promise.all(((data ?? []) as ReminderRepair[]).map(async (repair) => {
     const { data: currentRepair, error: currentError } = await supabase
       .from("repairs")
-      .select("id, repair_number, instrument, status, completed_date, collected_date, collection_reminder_sent_at")
+      .select("id, repair_number, instrument, status, completed_date, collected_date, collection_reminder_sent_at, collection_reminder_count")
       .eq("id", repair.id)
       .single();
     if (currentError) {
@@ -94,6 +98,28 @@ async function sendCollectionReminders(request: Request) {
         error: "A collection reminder has already been sent today",
       };
     }
+    if (currentRepair.collection_reminder_count >= 2) {
+      return {
+        repairId: repair.id,
+        repairNumber: repair.repair_number,
+        sent: false,
+        skipped: true,
+        error: "Maximum collection reminders already sent",
+      };
+    }
+    const nextReminderDueAt = currentRepair.collection_reminder_count === 0
+      ? new Date(currentRepair.completed_date)
+      : new Date(currentRepair.collection_reminder_sent_at ?? currentRepair.completed_date);
+    nextReminderDueAt.setDate(nextReminderDueAt.getDate() + 15);
+    if (nextReminderDueAt > new Date()) {
+      return {
+        repairId: repair.id,
+        repairNumber: repair.repair_number,
+        sent: false,
+        skipped: true,
+        error: `Next reminder is due ${nextReminderDueAt.toISOString()}`,
+      };
+    }
 
     const customer = Array.isArray(repair.customers) ? repair.customers[0] : repair.customers;
     if (!customer?.phone_number) {
@@ -108,10 +134,14 @@ async function sendCollectionReminders(request: Request) {
       );
       const { error: updateError } = await supabase
         .from("repairs")
-        .update({ collection_reminder_sent_at: new Date().toISOString() })
+        .update({
+          collection_reminder_sent_at: new Date().toISOString(),
+          collection_reminder_count: currentRepair.collection_reminder_count + 1,
+        })
         .eq("id", repair.id)
         .eq("status", "DONE")
-        .is("collected_date", null);
+        .is("collected_date", null)
+        .lt("collection_reminder_count", 2);
       if (updateError) throw updateError;
       return { repairId: repair.id, repairNumber: repair.repair_number, sent: true };
     } catch (sendError) {

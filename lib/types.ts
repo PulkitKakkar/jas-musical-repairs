@@ -29,6 +29,7 @@ export type Repair = {
   collected_date: string | null;
   cancelled_date: string | null;
   collection_reminder_sent_at: string | null;
+  collection_reminder_count: number;
   notes: string | null;
   created_at: string;
   updated_at: string;

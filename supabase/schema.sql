@@ -94,6 +94,7 @@ create table public.repairs (
   collected_date timestamptz,
   cancelled_date timestamptz,
   collection_reminder_sent_at timestamptz,
+  collection_reminder_count integer not null default 0 check (collection_reminder_count >= 0),
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
