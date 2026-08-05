@@ -539,6 +539,7 @@ export async function sendRepairCollectionReminderAction(repairId: string) {
         customer.full_name,
         repair.instrument,
         format(addDays(new Date(repair.completed_date), 15), "dd MMM yyyy"),
+        repair.repair_number,
       ),
     );
     const { error: updateError } = await supabase

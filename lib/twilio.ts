@@ -44,13 +44,15 @@ export function statusMessage(
   return `JAS Musicals: Hi ${firstName}, thank you for leaving your ${instrument} with us for repair.\n\nRepair reference: ${repairNumber}\nStatus: Received\n\n${footer}`;
 }
 
-export function collectionReminderMessage(customerName: string, instrument: string, deadlineText: string) {
+export function collectionReminderMessage(customerName: string, instrument: string, deadlineText: string, repairNumber?: string) {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
   const shopName = process.env.SHOP_NAME || "JAS Musicals";
   const openingHours = process.env.OPENING_HOURS || "Monday to Saturday, 10am to 6pm";
   const contactNumber = process.env.JAS_CONTACT_NUMBER || "07304085555";
+  const repairReference = repairNumber ? `Repair reference: ${repairNumber}\n\n` : "";
 
   return `${shopName}: Hi ${firstName}, your ${instrument} repair is complete and ready for collection.\n\n` +
+    repairReference +
     `Please collect the instrument by ${deadlineText}. After this date, storage charges will apply.\n\n` +
     `Opening hours: ${openingHours}\n\n` +
     `Terms and conditions: ${TERMS_URL}\n\n` +
